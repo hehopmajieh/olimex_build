@@ -1,4 +1,6 @@
-# Armbian #
+# Armbian for OLIMEX A20 boards #
+
+**This info had been modified for the Olimex branch of the build**
 
 Debian based Linux for ARM based single-board computers
   
@@ -19,7 +21,7 @@ Supported build environment is **Ubuntu Bionic 18.04 x64** ([minimal iso image](
 **Execution**
 
 	apt-get -y install git
-	git clone https://github.com/armbian/build
+	git clone https://github.com/OLIMEX/build
 	cd build
 	./compile.sh
 
