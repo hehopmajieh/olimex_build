@@ -18,6 +18,7 @@
 # addtorepo
 # prepare_host
 # download_toolchain
+# download_etcher_cli
 
 # cleaning <target>
 #
@@ -71,9 +72,11 @@ cleaning()
 		;;
 
 		oldcache)
-		if [[ -d $SRC/cache/rootfs && $(ls -1 $SRC/cache/rootfs | wc -l) -gt 6 ]]; then
+		if [[ -d $SRC/cache/rootfs && $(ls -1 $SRC/cache/rootfs/*.lz4 | wc -l) -gt ${ROOTFS_CACHE_MAX} ]]; then
 			display_alert "Cleaning" "rootfs cache (old)" "info"
-			(cd $SRC/cache/rootfs; ls -t | sed -e "1,${ROOTFS_CACHE_MAX}d" | xargs -d '\n' rm -f)
+			(cd $SRC/cache/rootfs; ls -t *.lz4 | sed -e "1,${ROOTFS_CACHE_MAX}d" | xargs -d '\n' rm -f)
+			# Remove signatures if they are present. We use them for internal purpose
+			(cd $SRC/cache/rootfs; ls -t *.asc | sed -e "1,${ROOTFS_CACHE_MAX}d" | xargs -d '\n' rm -f)
 		fi
 		;;
 	esac
@@ -530,7 +533,7 @@ prepare_host()
 	nfs-kernel-server btrfs-tools ncurses-term p7zip-full kmod dosfstools libc6-dev-armhf-cross \
 	curl patchutils python liblz4-tool libpython2.7-dev linux-base swig libpython-dev aptly acl \
 	locales ncurses-base pixz dialog systemd-container udev lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 \
-	bison libbison-dev flex libfl-dev"
+	bison libbison-dev flex libfl-dev cryptsetup"
 
 	local codename=$(lsb_release -sc)
 	display_alert "Build host OS release" "${codename:-(unknown)}" "info"
@@ -585,7 +588,7 @@ prepare_host()
 	# distribution packages are buggy, download from author
 	if [[ ! -f /etc/apt/sources.list.d/aptly.list ]]; then
 		display_alert "Updating from external repository" "aptly" "info"
-		apt-key adv --keyserver pool.sks-keyservers.net --recv-keys ED75B5A4483DA07C >/dev/null 2>&1
+		apt-key adv --keyserver hkp://pool.sks-keyservers.net:80 --recv-keys ED75B5A4483DA07C >/dev/null 2>&1
 		echo "deb http://repo.aptly.info/ squeeze main" > /etc/apt/sources.list.d/aptly.list
 	fi
 
@@ -631,7 +634,7 @@ prepare_host()
 		find $SRC/output $SRC/userpatches -type d ! -group sudo -exec chgrp --quiet sudo {} \;
 		find $SRC/output $SRC/userpatches -type d ! -perm -g+w,g+s -exec chmod --quiet g+w,g+s {} \;
 	fi
-	mkdir -p $DEST/debs/extra $DEST/{config,debug,patch} $SRC/userpatches/overlay $SRC/cache/{sources,toolchains,rootfs} $SRC/.tmp
+	mkdir -p $DEST/debs/extra $DEST/{config,debug,patch} $SRC/userpatches/overlay $SRC/cache/{sources,toolchains,utility,rootfs} $SRC/.tmp
 
 	find $SRC/patch -type d ! -name . | sed "s%/patch%/userpatches%" | xargs mkdir -p
 
@@ -654,6 +657,8 @@ prepare_host()
 		"https://${ARMBIANSERVER}/_toolchains/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz"
 		"https://${ARMBIANSERVER}/_toolchains/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz"
 		"https://${ARMBIANSERVER}/_toolchains/gcc-linaro-7.2.1-2017.11-x86_64_arm-eabi.tar.xz"
+		"https://${ARMBIANSERVER}/_toolchains/gcc-linaro-7.3.1-2018.05-x86_64_arm-linux-gnueabi.tar.xz"
+		"https://${ARMBIANSERVER}/_toolchains/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz"
 		)
 
 	for toolchain in ${toolchains[@]}; do
@@ -674,6 +679,9 @@ prepare_host()
 			rm -rf $SRC/cache/toolchains/$dir
 		fi
 	done
+
+	# download etcher CLI utility
+	download_etcher_cli
 
 	[[ ! -f $SRC/userpatches/customize-image.sh ]] && cp $SRC/config/templates/customize-image.sh.template $SRC/userpatches/customize-image.sh
 
@@ -721,7 +729,7 @@ download_toolchain()
 			touch $SRC/cache/.gpg/gpg.conf
 			chmod 600 $SRC/cache/.gpg/gpg.conf
 		fi
-		(gpg --homedir $SRC/cache/.gpg --no-permission-warning --list-keys 8F427EAF || gpg --homedir $SRC/cache/.gpg --no-permission-warning --keyserver keyserver.ubuntu.com --recv-keys 8F427EAF) 2>&1 | tee -a $DEST/debug/output.log
+		(gpg --homedir $SRC/cache/.gpg --no-permission-warning --list-keys 8F427EAF || gpg --homedir $SRC/cache/.gpg --no-permission-warning --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8F427EAF) 2>&1 | tee -a $DEST/debug/output.log
 		gpg --homedir $SRC/cache/.gpg --no-permission-warning --verify --trust-model always -q ${filename}.asc 2>&1 | tee -a $DEST/debug/output.log
 		[[ ${PIPESTATUS[0]} -eq 0 ]] && verified=true
 	else
@@ -735,6 +743,44 @@ download_toolchain()
 		display_alert "Verification failed" "" "wrn"
 	fi
 }
+
+
+download_etcher_cli()
+{
+        local url="https://github.com/resin-io/etcher/releases/download/v1.4.5/etcher-cli-1.4.5-linux-x64.tar.gz"
+	local hash="f7f3d63c29f5bf0b494c68efd6cc990e2e571c5f1833ed1c6f773f0f3681eb56"
+
+        local filename=${url##*/}
+        local dirname=${filename/.tar.gz/-dist}
+
+	export PATH="$PATH:$SRC/cache/utility/$dirname"
+
+        if [[ -f $SRC/cache/utility/$dirname/.download-complete ]]; then
+                return
+        fi
+
+        cd $SRC/cache/utility/
+
+        display_alert "Downloading" "$dirname"
+        curl -Lf --progress-bar $url -o $filename
+
+        local verified=false
+	local b=$(sha256sum $filename)
+
+        display_alert "Verifying"
+
+        [[ "$hash" == "$(sha256sum $filename | cut -d ' ' -f 1)" ]] && verified=true
+
+        if [[ $verified == true ]]; then
+                display_alert "Extracting"
+                tar --no-same-owner --overwrite -xf $filename && touch $SRC/cache/utility/$dirname/.download-complete && rm $filename
+                display_alert "Download complete" "" "info"
+        else
+                display_alert "Verification failed" "" "wrn"
+        fi
+}
+
+
 
 show_developer_warning()
 {

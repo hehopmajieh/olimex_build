@@ -63,7 +63,6 @@ create_desktop_package ()
 		# Disable Pulseaudio timer scheduling which does not work with sndhdmi driver
 		if [ -f /etc/pulse/default.pa ]; then sed "s/load-module module-udev-detect$/& tsched=0/g" -i  /etc/pulse/default.pa; fi
 
-		[ -f /etc/default/nodm ] && sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i /etc/default/nodm
 	exit 0
 	EOF
 	chmod 755 $destination/DEBIAN/postinst
@@ -85,10 +84,11 @@ create_desktop_package ()
 	mkdir -p $destination/etc/skel
 	cp -R $SRC/packages/blobs/desktop/skel/. $destination/etc/skel
 
+
 	# using different icon pack. Workaround due to this bug https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=867779
 	if [[ ${RELEASE} == bionic || ${RELEASE} == stretch ]]; then
-		sed -i 's/<property name="IconThemeName" type="string" value=".*$/<property name="IconThemeName" type="string" value="Humanity-Dark">/g' \
-		$destination/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
+	sed -i 's/<property name="IconThemeName" type="string" value=".*$/<property name="IconThemeName" type="string" value="Humanity-Dark">/g' \
+	$destination/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
 	fi
 
 	# install dedicated startup icons
@@ -116,14 +116,13 @@ desktop_postinstall ()
 {
 	# stage: install display manager
 	display_alert "Installing" "display manager: $DISPLAY_MANAGER" "info"
-	chroot $SDCARD /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y -qq install $PACKAGE_LIST_DISPLAY_MANAGER" >> $DEST/debug/install.log 2>&1
+	chroot $SDCARD /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=\"--force-confold\" -y -qq install $PACKAGE_LIST_DISPLAY_MANAGER" >> $DEST/debug/install.log 2>&1
 	[[ -f $SDCARD/etc/default/nodm ]] && sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $SDCARD/etc/default/nodm
 	[[ -d $SDCARD/etc/lightdm ]] && chroot $SDCARD /bin/bash -c "systemctl --no-reload disable lightdm.service >/dev/null 2>&1"
 
 	# Compile Turbo Frame buffer for sunxi
 	if [[ $LINUXFAMILY == sun* && $BRANCH == default ]]; then
 		sed 's/name="use_compositing" type="bool" value="true"/name="use_compositing" type="bool" value="false"/' -i $SDCARD/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
-		sed 's/name="use_compositing" type="bool" value="true"/name="use_compositing" type="bool" value="false"/' -i $SDCARD/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
 
 		# enable memory reservations
 		echo "disp_mem_reserves=on" >> $SDCARD/boot/armbianEnv.txt
