@@ -1,6 +1,6 @@
 # Common configuration file for all A20-OLinuXino boards
 BOARD_NAME="OLinuXino-A20"
-BOARDFAMILY="olinuxino"
+BOARDFAMILY="sun7i"
 
 MODULES="8021q a20_tp bonding ft5x_ts g_serial gpio_sunxi m25p80 spi_sun7i sunxi_lirc_new sunxi_can"
 MODULES_NEXT="bonding g_serial gpio-ir-tx r8723bs"
