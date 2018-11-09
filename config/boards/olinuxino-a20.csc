@@ -17,5 +17,5 @@ RECOMMENDED="Ubuntu_xenial_default_desktop:90,Debian_jessie_next:100"
 #
 BOARDRATING=""
 CHIP="http://docs.armbian.com/Hardware_Allwinner-A20/"
-HARDWARE="https://www.olimex.com/Products/SOM204/"
+HARDWARE="https://www.olimex.com/Products/OLinuXino/A20/"
 FORUMS="http://forum.armbian.com/index.php/forum/7-allwinner-a10a20/"
