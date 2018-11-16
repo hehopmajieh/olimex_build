@@ -115,7 +115,7 @@ index 97964f7f2ace..a392e4db60ae 100644
  	}, {
 -		.compatible = "olimex,lcd-olinuxino-43-ts",
 -		.data = &olimex_lcd_olinuxino_43ts,
-+		.compatible = "olimex,lcd-olinuxino-43",
++		.compatible = "olimex,lcd-olinuxino-4.3",
 +		.data = &olimex_lcd_olinuxino_43,
 +	}, {
 +		.compatible = "olimex,lcd-olinuxino-5",
