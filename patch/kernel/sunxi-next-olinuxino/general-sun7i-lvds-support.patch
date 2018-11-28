@@ -1,8 +1,16 @@
 diff --git a/drivers/gpu/drm/sun4i/sun4i_tcon.c b/drivers/gpu/drm/sun4i/sun4i_tcon.c
-index 3fb084f802e2..d74326f96de6 100644
+index 3fb084f802e2..e426fbc8bf34 100644
 --- a/drivers/gpu/drm/sun4i/sun4i_tcon.c
 +++ b/drivers/gpu/drm/sun4i/sun4i_tcon.c
-@@ -182,15 +182,23 @@ void sun4i_tcon_set_status(struct sun4i_tcon *tcon,
+@@ -17,6 +17,7 @@
+ #include <drm/drm_encoder.h>
+ #include <drm/drm_modes.h>
+ #include <drm/drm_of.h>
++#include <drm/drm_panel.h>
+ 
+ #include <uapi/drm/drm_mode.h>
+ 
+@@ -182,15 +183,23 @@ void sun4i_tcon_set_status(struct sun4i_tcon *tcon,
  		return;
  	}
  
@@ -30,7 +38,27 @@ index 3fb084f802e2..d74326f96de6 100644
  
  	sun4i_tcon_channel_set_status(tcon, channel, enabled);
  }
-@@ -1244,6 +1252,49 @@ static int sun6i_tcon_set_mux(struct sun4i_tcon *tcon,
+@@ -347,6 +356,7 @@ static void sun4i_tcon0_mode_set_lvds(struct sun4i_tcon *tcon,
+ 	unsigned int bp;
+ 	u8 clk_delay;
+ 	u32 reg, val = 0;
++	struct device_node *ep;
+ 
+ 	WARN_ON(!tcon->quirks->has_channel_0);
+ 
+@@ -394,6 +404,11 @@ static void sun4i_tcon0_mode_set_lvds(struct sun4i_tcon *tcon,
+ 	else
+ 		reg |= SUN4I_TCON0_LVDS_IF_BITWIDTH_18BITS;
+ 
++
++	ep = of_graph_get_endpoint_by_regs(tcon->dev->of_node, 1, 0);
++	if (of_property_read_bool(ep, "allwinner,lvds-dual-link"))
++		reg |= SUN4I_TCON0_LVDS_IF_LINK_DUAL;
++
+ 	regmap_write(tcon->regs, SUN4I_TCON0_LVDS_IF_REG, reg);
+ 
+ 	/* Setup the polarity of the various signals */
+@@ -1244,6 +1271,49 @@ static int sun6i_tcon_set_mux(struct sun4i_tcon *tcon,
  	return 0;
  }
  
@@ -80,7 +108,7 @@ index 3fb084f802e2..d74326f96de6 100644
  static const struct sun4i_tcon_quirks sun4i_a10_quirks = {
  	.has_channel_0		= true,
  	.has_channel_1		= true,
-@@ -1271,10 +1322,12 @@ static const struct sun4i_tcon_quirks sun6i_a31s_quirks = {
+@@ -1271,10 +1341,12 @@ static const struct sun4i_tcon_quirks sun6i_a31s_quirks = {
  };
  
  static const struct sun4i_tcon_quirks sun7i_a20_quirks = {
@@ -94,10 +122,19 @@ index 3fb084f802e2..d74326f96de6 100644
  
  static const struct sun4i_tcon_quirks sun8i_a33_quirks = {
 diff --git a/drivers/gpu/drm/sun4i/sun4i_tcon.h b/drivers/gpu/drm/sun4i/sun4i_tcon.h
-index f6a071cd5a6f..78cdcf176f89 100644
+index f6a071cd5a6f..9996f60a1edf 100644
 --- a/drivers/gpu/drm/sun4i/sun4i_tcon.h
 +++ b/drivers/gpu/drm/sun4i/sun4i_tcon.h
-@@ -201,6 +201,8 @@
+@@ -99,6 +99,8 @@
+ 
+ #define SUN4I_TCON0_LVDS_IF_REG			0x84
+ #define SUN4I_TCON0_LVDS_IF_EN				BIT(31)
++#define SUN4I_TCON0_LVDS_IF_LINK_MASK			BIT(30)
++#define SUN4I_TCON0_LVDS_IF_LINK_DUAL			(1 << 30)
+ #define SUN4I_TCON0_LVDS_IF_BITWIDTH_MASK		BIT(26)
+ #define SUN4I_TCON0_LVDS_IF_BITWIDTH_18BITS		(1 << 26)
+ #define SUN4I_TCON0_LVDS_IF_BITWIDTH_24BITS		(0 << 26)
+@@ -201,6 +203,8 @@
  #define SUN6I_TCON0_LVDS_ANA0_V(x)			(((x) & 3) << 8)
  #define SUN6I_TCON0_LVDS_ANA0_PD(x)			(((x) & 3) << 4)
  
@@ -106,7 +143,7 @@ index f6a071cd5a6f..78cdcf176f89 100644
  #define SUN4I_TCON1_FILL_CTL_REG		0x300
  #define SUN4I_TCON1_FILL_BEG0_REG		0x304
  #define SUN4I_TCON1_FILL_END0_REG		0x308
-@@ -227,6 +229,9 @@ struct sun4i_tcon_quirks {
+@@ -227,6 +231,9 @@ struct sun4i_tcon_quirks {
  
  	/* callback to handle tcon muxing options */
  	int	(*set_mux)(struct sun4i_tcon *, const struct drm_encoder *);
