@@ -273,7 +273,7 @@ create_armbian()
 
 		# On A20-OLinuXino-e* boards there is issue with booting from
 		# eMMC cards. Workaround is to copy u-boot also on SPI flash.
-		if [[ $BOARD == olinuxino-a20 ]] && [[ $BRANCH == next ]]; then
+		if [[ $BOARD == olinuxino-a20 ]] && [[ $BRANCH == next ]] && [[ -n $spicheck ]]; then
 			dialog --title "$title" --backtitle "$backtitle" --cr-wrap --colors --yesno " \Z1$(toilet -f mono12 WARNING)\Zn\n
 			On some boards with eMMC, there is issue with booting from the secondary card. As work around u-boot will be written to the SPI Flash.\n
 			If you don't have such problems, this can be skipped.\n\n
