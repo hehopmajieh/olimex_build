@@ -96,6 +96,7 @@ create_armbian()
 	else
 		[[ -n $2 ]] && ( mount -o compress-force=zlib $2 ${TempDir}/rootfs || mount $2 ${TempDir}/rootfs )
 		[[ -n $1 && $1 != "spi" ]] && mount $1 ${TempDir}/bootfs
+		[[ -n $1 && -n $2 && $1 == "spi" && $2 == ${emmccheck}p* ]] && mount $2 ${TempDir}/bootfs
 	fi
 	rm -rf ${TempDir}/bootfs/* ${TempDir}/rootfs/*
 
@@ -245,7 +246,7 @@ create_armbian()
 		mkimage -C none -A arm -T script -d ${TempDir}/bootfs/boot/boot.cmd ${TempDir}/bootfs/boot/boot.scr	>/dev/null 2>&1 || (echo "Error"; exit 0)
 
 		# fstab adj
-		if [[ "$1" != "$2" ]]; then
+		if [[ "$1" != "$2" && $1 != *spi* ]]; then
 			echo "$emmcbootuuid	/media/mmcboot	ext4    ${mountopts[ext4]}" >> ${TempDir}/rootfs/etc/fstab
 			echo "/media/mmcboot/boot   				/boot		none	bind								0       0" >> ${TempDir}/rootfs/etc/fstab
 		fi
@@ -269,19 +270,11 @@ create_armbian()
 			echo "Error: no u-boot package found, exiting"
 			exit -1
 		fi
-		write_uboot_platform $DIR $emmccheck
 
-		# On A20-OLinuXino-e* boards there is issue with booting from
-		# eMMC cards. Workaround is to copy u-boot also on SPI flash.
-		if [[ $BOARD == olinuxino-a20 ]] && [[ $BRANCH == next ]] && [[ -n $spicheck ]]; then
-			dialog --title "$title" --backtitle "$backtitle" --cr-wrap --colors --yesno " \Z1$(toilet -f mono12 WARNING)\Zn\n
-			On some boards with eMMC, there is issue with booting from the secondary card. As work around u-boot will be written to the SPI Flash.\n
-			If you don't have such problems, this can be skipped.\n\n
-			Continue?" 20 80
-			[[ $? -eq 0 ]] && write_uboot_platform_mtd $DIR $spicheck
-
+		# Do not write u-boot when booting from SPI
+		if [[ $1 != *spi* ]]; then
+			write_uboot_platform $DIR $emmccheck
 		fi
-
 	fi
 
 	# Boot from SD card, root = SATA / USB
@@ -316,7 +309,7 @@ create_armbian()
 
 	# Boot from SPI, root = SATA / USB
 	#
-	if [[ $1 == *spi* ]]; then
+	if [[ $1 == *spi* && $2 == ${DISK_ROOT_PART} ]]; then
 		sed -e 's,rootdev=.*,rootdev='"$satauuid"',g' -i ${TempDir}/rootfs/boot/armbianEnv.txt
 		echo "$satauuid	/		$FilesystemChoosen	${mountopts[$FilesystemChoosen]}" >> ${TempDir}/rootfs/etc/fstab
 	fi
@@ -339,7 +332,7 @@ create_armbian()
 	sync
 
 	umount ${TempDir}/rootfs
-	[[ $1 != "spi" ]] && umount ${TempDir}/bootfs
+	[[ $1 != "spi" ]] || [[ $1 == "spi" && $2 == ${emmccheck}p* ]] && umount ${TempDir}/bootfs
 } # create_armbian
 
 
@@ -551,45 +544,52 @@ write_uboot_platform_mtd()
 	for mtd in ${spicheck[@]}; do
 
 		local _name=$(mtdinfo /dev/$mtd | grep "Name: "| awk '{print $2}')
-		local _blocks=$(mtdinfo /dev/$mtd | grep "Amount of eraseblocks: "| awk '{print $4}')
-
-		# Erase partition
-		flash_erase /dev/$mtd 0 0 | stdbuf -o0 tr '\r' '\n' | stdbuf -o0 sed 's/\s\s*/ /g' | stdbuf -o0 cut -d' ' -f7 \
-		| dialog --backtitle "$backtitle" --title " $title " --gauge "\n\n  Erasing $_name partition.\n\n \
-		Please wait!\n\n" 11 80
+		local _i=0
 
 		if [[ $_name == "SPI.u-boot-env"* ]]; then
 
 			# Check for environment file
-			[[ ! -f /boot/uboot.env ]] && continue
+			if [[ ! -f /boot/uboot.env ]]; then
+				flash_erase /dev/$mtd 0 0
+				continue
+			fi
 
-			stdbuf -o0 nandwrite -k /dev/$mtd /boot/uboot.env \
+			flashcp -v /boot/uboot.env /dev/$mtd | stdbuf -o0 tr '\r' '\n' \
 			| while read line; do
-				local _progress=$(awk '{print $5}' <<< $line)
+
+				local _progress=$(echo "$line" | grep -o -P '[0-9]*(\.[0-9]*)?(?=%)')
+
+				[[ $line == *"Erasing blocks"* ]] && _i=0
+				[[ $line == *"Writing data"* ]] && _i=1
+				[[ $line == *"Verifying data"* ]] && _i=2
 
 				echo XXX
-				echo "scale=2; (100/$_blocks)*$_progress" | bc | xargs printf "%.0f\n"
-				echo "\n\n  Writting /boot/uboot.env to $_name...\n\n"
-				echo "  $line"
+				echo $((($_i * 33) + (_progress / 3)))
+				echo "\n\n  Installing uboot.env to \Z1$_name\Zn:"
+				echo "\n\n  $line"
 				echo XXX
 
 			done \
-			| dialog --backtitle "$backtitle" --title " $title " --gauge "\n\n  Writting /boot/uboot.env to $_name..." 11 80
+			| dialog --colors --backtitle "$backtitle" --title " $title " --gauge "Installing uboot.env to $\Z1$_name\Zn" 11 80
 
 		else
-			stdbuf -o0 nandwrite -k /dev/$mtd $1/u-boot-sunxi-with-spl.bin \
+			flashcp -v $1/u-boot-sunxi-with-spl.bin /dev/$mtd | stdbuf -o0 tr '\r' '\n' \
 			| while read line; do
-				local _progress=$(awk '{print $5}' <<< $line)
+
+				local _progress=$(echo "$line" | grep -o -P '[0-9]*(\.[0-9]*)?(?=%)')
+
+				[[ $line == *"Erasing blocks"* ]] && _i=0
+				[[ $line == *"Writing data"* ]] && _i=1
+				[[ $line == *"Verifying data"* ]] && _i=2
 
 				echo XXX
-				echo "scale=2; (100/$_blocks)*$_progress" | bc | xargs printf "%.0f\n"
-				echo "\n\n  Writting u-boot-sunxi-with-spl.bin to $_name...\n\n"
-				echo "  $line"
+				echo $((($_i * 33) + (_progress / 3)))
+				echo "\n\n  Installing u-boot-sunxi-with-spl.bin to \Z1$_name\Zn:"
+				echo "\n\n  $line"
 				echo XXX
 
 			done \
-			| dialog --backtitle "$backtitle" --title " $title " --gauge "\n\n  Writting u-boot-sunxi-with-spl.bin to $_name.\n\n \
-			Please wait!\n\n" 11 80
+			| dialog --colors --backtitle "$backtitle" --title " $title " --gauge "Installing u-boot-sunxi-with-spl.bin to $\Z1$_name\Zn" 11 80
 		fi
 	done
 }
@@ -655,6 +655,7 @@ main()
 	[[ ( $LINUXFAMILY == odroidxu4 || $LINUXFAMILY == mvebu* ) && ( -b /dev/mmcblk0boot0 || -b /dev/mmcblk1boot0 ) ]] && options+=(4 "Update the bootloader on a special eMMC partition")
 	[[ -n $spicheck && $(type -t write_uboot_platform_mtd) == function ]] && options+=(5 "Install the bootloader to SPI Flash")
 	[[ -n $spicheck ]] && options+=(6 "Boot from SPI  - system on SATA, USB or NVMe")
+	[[ -n $spicheck && $BOARD == olinuxino-a20 && $BRANCH == next ]] && options+=(7 "Boot from SPI  - system on $ichip")
 	[[ ${#options[@]} -eq 0 || "$root_uuid" == "$emmcuuid" || "$root_uuid" == "/dev/nand2" ]] && \
 	dialog --ok-label "Cancel" --title " Warning " --backtitle "$backtitle" --colors --no-collapse --msgbox "\n\Z1There are no targets. Please check your drives.\Zn" 7 52
 	cmd=(dialog --title "Choose an option:" --backtitle "$backtitle" --menu "\nCurrent root: $root_uuid \n \n" 14 60 7)
@@ -729,6 +730,16 @@ main()
 				ShowWarning "This script will erase your device $DISK_ROOT_PART. Continue?"
 				formatdisk "$DISK_ROOT_PART"
 				create_armbian "spi" "$DISK_ROOT_PART"
+				;;
+			7)
+				title="SPI flash boot | $ichip root install"
+				MTD_BLK="/dev/${spicheck}"
+				command="Power off"
+				ShowWarning "This script will erase your $ichip and $MTD_BLK. Continue?"
+				umountdevice "$emmccheck"
+				formatemmc "$emmccheck"
+				create_armbian "spi" "$dest_root"
+				write_uboot_platform_mtd $DIR $MTD_BLK
 				;;
 		esac
 	done
