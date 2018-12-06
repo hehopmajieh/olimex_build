@@ -65,16 +65,10 @@ fi
 
 # define makefs and mount options
 declare -A mkopts mountopts
-# for ARMv7 remove 64bit feature from default mke2fs format features
-if [[ $LINUXFAMILY == mvebu ]]; then
-	mkopts[ext2]='-O ^64bit -qF'
-	mkopts[ext3]='-O ^64bit -qF'
-	mkopts[ext4]='-O ^64bit -qF'
-else
-	mkopts[ext2]='-qF'
-	mkopts[ext3]='-qF'
-	mkopts[ext4]='-qF'
-fi
+
+mkopts[ext2]='-O ^64bit,^metadata_csum -qF'
+mkopts[ext3]='-O ^64bit,^metadata_csum -qF'
+mkopts[ext4]='-O ^64bit,^metadata_csum -qF'
 mkopts[btrfs]='-f'
 mkopts[f2fs]=''
 

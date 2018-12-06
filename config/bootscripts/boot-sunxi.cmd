@@ -33,7 +33,7 @@ if test "${console}" = "serial" || test "${console}" = "both"; then setenv conso
 
 # get PARTUUID of first partition on SD/eMMC it was loaded from
 # mmc 0 is always mapped to device u-boot (2016.09+) was loaded from
-if test "${devtype}" = "mmc"; then part uuid mmc 0:1 partuuid; fi
+if test "${devtype}" = "mmc"; then part uuid mmc ${devnum}:1 partuuid; fi
 
 setenv bootargs "root=${rootdev} rootwait rootfstype=${rootfstype} ${consoleargs} hdmi.audio=EDID:0 disp.screen0_output_mode=${disp_mode} panic=10 consoleblank=0 loglevel=${verbosity} ubootpart=${partuuid} ubootsource=${devtype} usb-storage.quirks=${usbstoragequirks} ${extraargs} ${extraboardargs}"
 
