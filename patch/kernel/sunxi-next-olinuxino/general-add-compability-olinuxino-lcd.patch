@@ -5,7 +5,7 @@ index 97964f7f2ace..a392e4db60ae 100644
 @@ -1790,21 +1790,21 @@ static const struct panel_desc okaya_rs800480t_7x0gp = {
  	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
  };
- 
+
 -static const struct drm_display_mode olimex_lcd_olinuxino_43ts_mode = {
 -	.clock = 9000,
 +static const struct drm_display_mode olimex_lcd_olinuxino_43_mode = {
@@ -26,7 +26,7 @@ index 97964f7f2ace..a392e4db60ae 100644
 +	.vtotal = 272 + 4 + 10 + 13,
  	.vrefresh = 60,
  };
- 
+
 -static const struct panel_desc olimex_lcd_olinuxino_43ts = {
 -	.modes = &olimex_lcd_olinuxino_43ts_mode,
 +static const struct panel_desc olimex_lcd_olinuxino_43 = {
@@ -37,7 +37,7 @@ index 97964f7f2ace..a392e4db60ae 100644
 @@ -1813,6 +1813,74 @@ static const struct panel_desc olimex_lcd_olinuxino_43ts = {
  	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
  };
- 
+
 +static const struct drm_display_mode olimex_lcd_olinuxino_5_mode = {
 +	.clock = 33300,
 +	.hdisplay = 800,
@@ -84,15 +84,15 @@ index 97964f7f2ace..a392e4db60ae 100644
 +};
 +
 +static const struct drm_display_mode olimex_lcd_olinuxino_10_mode = {
-+	.clock = 51000,
++	.clock = 45000,
 +	.hdisplay = 1024,
-+	.hsync_start = 1024 + 154,
-+	.hsync_end = 1024 + 154 + 10,
-+	.htotal = 1024 + 154 + 10 + 150,
++	.hsync_start = 1024 + 10,
++	.hsync_end = 1024 + 10 + 6,
++	.htotal = 1024 + 10 + 6 + 160,
 +	.vdisplay = 600,
-+	.vsync_start = 600 + 12,
-+	.vsync_end = 600 + 12 + 2,
-+	.vtotal = 600 + 12 + 2 + 21,
++	.vsync_start = 600 + 1,
++	.vsync_end = 600 + 1 + 1,
++	.vtotal = 600 + 1 + 1 + 22,
 +	.vrefresh = 60,
 +};
 +
