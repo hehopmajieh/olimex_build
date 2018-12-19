@@ -217,8 +217,30 @@ install_common()
 	# disable deprecated parameter
 	sed '/.*$KLogPermitNonKernelFacility.*/,// s/.*/#&/' -i $SDCARD/etc/rsyslog.conf
 
-	# enable getty on serial console
-	chroot $SDCARD /bin/bash -c "systemctl --no-reload enable serial-getty@$SERIALCON.service >/dev/null 2>&1"
+	# enable getty on multiple serial consoles and adjust the speed if it is defined and different than 115200, example: ttyS0:15000000,ttyGS1
+	ifs=$IFS
+	for i in $(echo ${SERIALCON} | sed "s/,/ /g")
+	do
+		# add serial console to secure tty list
+		[ -z "$(grep -w '^$i' $SDCARD/etc/securetty 2> /dev/null)" ] && echo "$i" >>  $SDCARD/etc/securetty
+		IFS=':' read -r -a array <<< "$i"
+		if [[ ${array[1]} != "115200" && -n ${array[1]} ]]; then
+			# make a copy, fix speed and enable
+			cp $SDCARD/lib/systemd/system/serial-getty@.service $SDCARD/lib/systemd/system/serial-getty@${array[0]}.service
+			sed -i "s/--keep-baud 115200/--keep-baud ${array[1]},115200/" $SDCARD/lib/systemd/system/serial-getty@${array[0]}.service
+		fi
+		display_alert "Enabling serial console" "${array[0]}" "info"
+		chroot $SDCARD /bin/bash -c "systemctl daemon-reload" >> $DEST/debug/install.log 2>&1
+		chroot $SDCARD /bin/bash -c "systemctl --no-reload enable serial-getty@${array[0]}.service" >> $DEST/debug/install.log 2>&1
+		if [[ ${array[0]} == "ttyGS0" && $LINUXFAMILY == sun8i && $BRANCH == default ]]; then
+			mkdir -p $SDCARD/etc/systemd/system/serial-getty@ttyGS0.service.d
+			cat <<-EOF > $SDCARD/etc/systemd/system/serial-getty@ttyGS0.service.d/10-switch-role.conf
+			[Service]
+			ExecStartPre=-/bin/sh -c "echo 2 > /sys/bus/platform/devices/sunxi_usb_udc/otg_role"
+			EOF
+		fi
+	done
+	IFS=$ifs
 
 	[[ $LINUXFAMILY == sun*i ]] && mkdir -p $SDCARD/boot/overlay-user
 
@@ -280,7 +302,7 @@ install_distribution_specific()
 		# remove legal info from Ubuntu
 		[[ -f $SDCARD/etc/legal ]] && rm $SDCARD/etc/legal
 
-		# disable not working on unneeded services
+		# disable not working or unneeded services
 		# ureadahead needs kernel tracing options that AFAIK are present only in mainline
 		chroot $SDCARD /bin/bash -c "systemctl --no-reload mask ondemand.service ureadahead.service setserial.service etc-setserial.service >/dev/null 2>&1"
 		;;
@@ -343,6 +365,8 @@ install_distribution_specific()
 		sed -i "s/#Compress=.*/Compress=yes/g" $SDCARD/etc/systemd/journald.conf
 		sed -i "s/#RateLimitIntervalSec=.*/RateLimitIntervalSec=30s/g" $SDCARD/etc/systemd/journald.conf
 		sed -i "s/#RateLimitBurst=.*/RateLimitBurst=10000/g" $SDCARD/etc/systemd/journald.conf
+		# disable conflicting services
+		chroot $SDCARD /bin/bash -c "systemctl --no-reload mask ondemand.service >/dev/null 2>&1"
 		;;
 	esac
 }
