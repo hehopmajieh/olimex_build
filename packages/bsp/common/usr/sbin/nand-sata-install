@@ -269,6 +269,11 @@ create_armbian()
 		if [[ $1 != *spi* ]]; then
 			write_uboot_platform $DIR $emmccheck
 		fi
+
+		# Copy sector 15, as there may be some configuration information
+		if [[ $BOARD == olinuxino-a20 && $BRANCH == next ]]; then
+			dd if=${root_partition_device} of=${emmccheck} bs=512 seek=15 skip=15 count=1 conv=sync,fsync
+		fi
 	fi
 
 	# Boot from SD card, root = SATA / USB
