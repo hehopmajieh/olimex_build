@@ -1,13 +1,22 @@
-diff --git a/arch/arm/dts/rk3399-nanopi4-common.dtsi b/arch/arm/dts/rk3399-nanopi4-common.dtsi
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index 102a48a..dceef9d 100644
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile2
+@@ -16,6 +16,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-gru-kevin.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi4-rev00.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi4-rev01.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi4-rev04.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-orangepi.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-puma-haikou.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-sapphire.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rockpro64.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-orangepi.dts b/arch/arm64/boot/dts/rockchip/rk3399-orangepi.dts
 new file mode 100644
-index 0000000..2b87c32
+index 000000000000..9a7887220551
 --- /dev/null
-+++ b/arch/arm/dts/rk3399-nanopi4-common.dtsi
-@@ -0,0 +1,728 @@
++++ b/arch/arm64/boot/dts/rockchip/rk3399-orangepi.dts
+@@ -0,0 +1,927 @@
 +/*
-+ * Copyright (c) 2018 FriendlyElec Computer Tech. Co., Ltd.
-+ * (http://www.friendlyarm.com)
-+ *
 + * Copyright (c) 2016 Fuzhou Rockchip Electronics Co., Ltd
 + *
 + * This file is dual-licensed: you can use it either under the terms
@@ -49,37 +58,26 @@ index 0000000..2b87c32
 + *     OTHER DEALINGS IN THE SOFTWARE.
 + */
 +
-+#include <dt-bindings/pwm/pwm.h>
-+#include <dt-bindings/pinctrl/rockchip.h>
++/dts-v1/;
++#include "dt-bindings/pwm/pwm.h"
 +#include "rk3399.dtsi"
-+#include "rk3399-sdram-lpddr3-4GB-1600.dtsi"
++#include "rk3399-opp.dtsi"
++#include <dt-bindings/input/input.h>
 +
 +/ {
-+	model = "FriendlyElec boards based on Rockchip RK3399";
-+	compatible = "friendlyelec,nanopi4",
++	model = "OrangePi board based on Rockchip RK3399";
++	compatible = "xulung,orangepi-rk3399",
 +		   "rockchip,rk3399";
 +
-+	chosen {
-+		stdout-path = &uart2;
-+		u-boot,spl-boot-order = &sdhci, &sdmmc;	
++	cpuinfo {
++		compatible = "rockchip,cpuinfo";
 +	};
 +
 +	mach: board {
-+		compatible = "friendlyelec,board";
-+		machine = "NANOPI4";
++		compatible = "xulung,board";
++		machine = "ORANGEPI-RK3399";
 +		hwrev = <255>;
-+		model = "NanoPi 4 Series";
-+	};
-+
-+	fiq_debugger: fiq-debugger {
-+		compatible = "rockchip,fiq-debugger";
-+		rockchip,serial-id = <2>;
-+		rockchip,signal-irq = <182>;
-+		rockchip,wake-irq = <0>;
-+		rockchip,irq-mode-enable = <1>;  /* If enable uart uses irq instead of fiq */
-+		rockchip,baudrate = <1500000>;  /* Only 115200 and 1500000 */
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&uart2c_xfer>;
++		model = "OrangePi Series";
 +	};
 +
 +	clkin_gmac: external-gmac-clock {
@@ -96,15 +94,6 @@ index 0000000..2b87c32
 +		regulator-boot-on;
 +		regulator-min-microvolt = <3300000>;
 +		regulator-max-microvolt = <3300000>;
-+	};
-+
-+	vcc5v0_host: vcc5v0-host-regulator {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc5v0_host";
-+		regulator-always-on;
-+		regulator-boot-on;
-+		regulator-min-microvolt = <5000000>;
-+		regulator-max-microvolt = <5000000>;
 +	};
 +
 +	vcc5v0_sys: vcc5v0-sys {
@@ -148,11 +137,63 @@ index 0000000..2b87c32
 +		compatible = "pwm-regulator";
 +		pwms = <&pwm2 0 25000 1>;
 +		regulator-name = "vdd_log";
-+		regulator-always-on;
-+		regulator-boot-on;
 +		regulator-min-microvolt = <800000>;
 +		regulator-max-microvolt = <1400000>;
-+		regulator-init-microvolt = <1000000>;
++		regulator-always-on;
++		regulator-boot-on;
++
++		/* for rockchip boot on */
++		rockchip,pwm_id = <2>;
++		rockchip,pwm_voltage = <1000000>;
++	};
++
++	vcc5v0_host: vcc5v0-host-regulator {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio4 RK_PD1 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&vcc5v0_host_en>;
++		regulator-name = "vcc5v0_host";
++		vin-supply = <&vcc5v0_sys>;
++	};
++
++	dw_hdmi_audio: dw-hdmi-audio {
++		status = "disabled";
++		compatible = "rockchip,dw-hdmi-audio";
++		#sound-dai-cells = <0>;
++	};
++
++	hdmi_sound: hdmi-sound {
++		status = "okay";
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <256>;
++		simple-audio-card,name = "rockchip,hdmi";
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s2>;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&hdmi>;
++		};
++	};
++
++	spdif-sound {
++		status = "okay";
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "ROCKCHIP,SPDIF";
++		simple-audio-card,cpu {
++			sound-dai = <&spdif>;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&spdif_out>;
++		};
++	};
++
++	spdif_out: spdif-out {
++		status = "okay";
++		compatible = "linux,spdif-dit";
++		#sound-dai-cells = <0>;
 +	};
 +
 +	pwm_bl: backlight {
@@ -195,6 +236,58 @@ index 0000000..2b87c32
 +		default-brightness-level = <200>;
 +	};
 +
++	gpio-keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		autorepeat;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&power_key>;
++
++		button@0 {
++			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_POWER>;
++			label = "GPIO Key Power";
++			linux,input-type = <1>;
++			gpio-key,wakeup = <1>;
++			debounce-interval = <100>;
++		};
++	};
++
++	adc-keys {
++		compatible = "adc-keys";
++		io-channels = <&saradc 1>;
++		io-channel-names = "buttons";
++		poll-interval = <100>;
++		keyup-threshold-microvolt = <1800000>;
++
++		button-up {
++			label = "Volume Up";
++			linux,code = <KEY_VOLUMEUP>;
++			press-threshold-microvolt = <100000>;
++		};
++
++		button-down {
++			label = "Volume Down";
++			linux,code = <KEY_VOLUMEDOWN>;
++			press-threshold-microvolt = <300000>;
++		};
++	};
++
++	leds: gpio-leds {
++		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 =<&leds_gpio>;
++
++		led@1 {
++			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
++			label = "status_led";
++			linux,default-trigger = "heartbeat";
++			linux,default-trigger-delay-ms = <0>;
++		};
++	};
++
 +	sdio_pwrseq: sdio-pwrseq {
 +		compatible = "mmc-pwrseq-simple";
 +		clocks = <&rk808 1>;
@@ -209,6 +302,31 @@ index 0000000..2b87c32
 +		 * - PDN (power down when low)
 +		 */
 +		reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>; /* GPIO0_B2 */
++	};
++
++	wireless-wlan {
++		compatible = "wlan-platdata";
++		rockchip,grf = <&grf>;
++		wifi_chip_type = "ap6354";
++		sdio_vref = <1800>;
++		WIFI,host_wake_irq = <&gpio0 3 GPIO_ACTIVE_HIGH>; /* GPIO0_a3 */
++		status = "okay";
++	};
++
++	wireless-bluetooth {
++		compatible = "bluetooth-platdata";
++		clocks = <&rk808 1>;
++		clock-names = "ext_clock";
++		//wifi-bt-power-toggle;
++		uart_rts_gpios = <&gpio2 19 GPIO_ACTIVE_LOW>; /* GPIO2_C3 */
++		pinctrl-names = "default", "rts_gpio";
++		pinctrl-0 = <&uart0_rts>;
++		pinctrl-1 = <&uart0_gpios>;
++		//BT,power_gpio  = <&gpio3 19 GPIO_ACTIVE_HIGH>; /* GPIOx_xx */
++		BT,reset_gpio    = <&gpio0 9 GPIO_ACTIVE_HIGH>; /* GPIO0_B1 */
++		BT,wake_gpio     = <&gpio2 26 GPIO_ACTIVE_HIGH>; /* GPIO2_D2 */
++		BT,wake_host_irq = <&gpio0 4 GPIO_ACTIVE_HIGH>; /* GPIO0_A4 */
++		status = "okay";
 +	};
 +};
 +
@@ -260,6 +378,32 @@ index 0000000..2b87c32
 +
 +&uart2 {
 +	status = "okay";
++};
++
++&vopb {
++	status = "okay";
++};
++
++&vopb_mmu {
++	status = "okay";
++};
++
++&vopl {
++	status = "okay";
++};
++
++&vopl_mmu {
++	status = "okay";
++};
++
++&hdmi {
++	/* remove the hdmi_cec, reused by edp_hpd */
++	pinctrl-0 = <&hdmi_i2c_xfer>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	#sound-dai-cells = <0>;
++	status = "okay";
++	ddc-i2c-bus = <&i2c7>;
 +};
 +
 +&i2c0 {
@@ -544,6 +688,14 @@ index 0000000..2b87c32
 +	status = "okay";
 +};
 +
++&spdif {
++	status = "okay";
++	pinctrl-0 = <&spdif_bus>;
++	i2c-scl-rising-time-ns = <450>;
++	i2c-scl-falling-time-ns = <15>;
++	#sound-dai-cells = <0>;
++};
++
 +&i2s0 {
 +	status = "okay";
 +	rockchip,i2s-broken-burst-len;
@@ -599,16 +751,17 @@ index 0000000..2b87c32
 +};
 +
 +&saradc {
++	status = "okay";
 +	vref-supply = <&vccadc_ref>; /* TBD */
 +};
 +
 +&sdhci {
 +	bus-width = <8>;
-+	//mmc-hs400-1_8v;
++	mmc-hs400-1_8v;
 +	supports-emmc;
 +	non-removable;
 +	keep-power-in-suspend;
-+	//mmc-hs400-enhanced-strobe;
++	mmc-hs400-enhanced-strobe;
 +	status = "okay";
 +};
 +
@@ -658,8 +811,18 @@ index 0000000..2b87c32
 +	status = "okay";
 +};
 +
++&tcphy0 {
++	extcon = <&fusb0>;
++	status = "okay";
++};
++
++&tcphy1 {
++	status = "okay";
++};
++
 +&u2phy0 {
 +	status = "okay";
++	extcon = <&fusb0>;
 +
 +	u2phy0_otg: otg-port {
 +		status = "okay";
@@ -682,6 +845,24 @@ index 0000000..2b87c32
 +		phy-supply = <&vcc5v0_host>;
 +		status = "okay";
 +	};
++};
++
++&usbdrd3_0 {
++	status = "okay";
++	extcon = <&fusb0>;
++};
++
++&usbdrd3_1 {
++	status = "okay";
++};
++
++&usbdrd_dwc3_0 {
++	status = "okay";
++};
++
++&usbdrd_dwc3_1 {
++	status = "okay";
++	dr_mode = "host";
 +};
 +
 +&usb_host0_ehci {
@@ -714,6 +895,12 @@ index 0000000..2b87c32
 +		};
 +	};
 +
++	usb2 {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <4 25 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
 +	fusb30x {
 +		fusb0_int: fusb0-int {
 +			rockchip,pins = <1 2 RK_FUNC_GPIO &pcfg_pull_up>;
@@ -726,126 +913,33 @@ index 0000000..2b87c32
 +		};
 +	};
 +
++	wireless-bluetooth {
++		uart0_gpios: uart0-gpios {
++			rockchip,pins = <2 19 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
 +	rockchip-key {
 +		power_key: power-key {
 +			rockchip,pins = <0 5 RK_FUNC_GPIO &pcfg_pull_up>;
 +		};
 +	};
-+};
-diff --git a/arch/arm/dts/rk3399-nanopi4-rev00.dts b/arch/arm/dts/rk3399-nanopi4-rev00.dts
-new file mode 100644
-index 0000000..f1ad210
---- /dev/null
-+++ b/arch/arm/dts/rk3399-nanopi4-rev00.dts
-@@ -0,0 +1,30 @@
-+/*
-+ * Copyright (c) 2018 FriendlyElec Computer Tech. Co., Ltd.
-+ * (http://www.friendlyarm.com)
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-+ */
 +
-+/dts-v1/;
-+#include "rk3399-nanopi4-common.dtsi"
++	lcd-panel {
++		lcd_panel_reset: lcd-panel-reset {
++			rockchip,pins = <4 30 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
 +
-+/ {
-+	model = "FriendlyElec NanoPC-T4";
-+	compatible = "friendlyelec,nanopc-t4", "rockchip,rk3399";
-+};
++	headphone {
++		hp_det: hp-det {
++			rockchip,pins = <4 28 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
 +
-+&mach {
-+	hwrev = <0>;
-+	model = "NanoPC-T4";
++	gpio-leds {
++		leds_gpio: leds-gpio {
++			rockchip,pins = <0 13 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
 +};
-diff --git a/configs/nanopi4_defconfig b/configs/nanopi4_defconfig
-new file mode 100644
-index 0000000..662c46e
---- /dev/null
-+++ b/configs/nanopi4_defconfig
-@@ -0,0 +1,75 @@
-+CONFIG_ARM=y
-+CONFIG_ARCH_ROCKCHIP=y
-+CONFIG_SYS_TEXT_BASE=0x00200000
-+CONFIG_SPL_LIBCOMMON_SUPPORT=y
-+CONFIG_SPL_LIBGENERIC_SUPPORT=y
-+CONFIG_SYS_MALLOC_F_LEN=0x4000
-+CONFIG_ROCKCHIP_RK3399=y
-+CONFIG_ROCKCHIP_SPL_RESERVE_IRAM=0x4000
-+CONFIG_DEBUG_UART_BASE=0xFF1A0000
-+CONFIG_DEBUG_UART_CLOCK=24000000
-+CONFIG_SPL_STACK_R_ADDR=0x80000
-+CONFIG_DEFAULT_DEVICE_TREE="rk3399-nanopi4-rev00"
-+CONFIG_DEBUG_UART=y
-+CONFIG_FIT=y
-+CONFIG_SPL_LOAD_FIT=y
-+CONFIG_SPL_FIT_GENERATOR="arch/arm/mach-rockchip/make_fit_atf.py"
-+# CONFIG_DISPLAY_CPUINFO is not set
-+CONFIG_DISPLAY_BOARDINFO_LATE=y
-+CONFIG_SPL_STACK_R=y
-+CONFIG_SPL_STACK_R_MALLOC_SIMPLE_LEN=0x4000
-+CONFIG_SPL_ATF=y
-+CONFIG_SPL_ATF_NO_PLATFORM_PARAM=y
-+CONFIG_CMD_BOOTZ=y
-+CONFIG_CMD_GPT=y
-+CONFIG_CMD_MMC=y
-+CONFIG_CMD_SF=y
-+CONFIG_CMD_USB=y
-+# CONFIG_CMD_SETEXPR is not set
-+CONFIG_CMD_TIME=y
-+CONFIG_SPL_OF_CONTROL=y
-+CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
-+CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_REGMAP=y
-+CONFIG_SPL_REGMAP=y
-+CONFIG_SYSCON=y
-+CONFIG_SPL_SYSCON=y
-+CONFIG_CLK=y
-+CONFIG_SPL_CLK=y
-+CONFIG_ROCKCHIP_GPIO=y
-+CONFIG_SYS_I2C_ROCKCHIP=y
-+CONFIG_MMC_DW=y
-+CONFIG_MMC_DW_ROCKCHIP=y
-+CONFIG_MMC_SDHCI=y
-+CONFIG_MMC_SDHCI_ROCKCHIP=y
-+CONFIG_DM_ETH=y
-+CONFIG_ETH_DESIGNWARE=y
-+CONFIG_GMAC_ROCKCHIP=y
-+CONFIG_PINCTRL=y
-+CONFIG_SPL_PINCTRL=y
-+CONFIG_PINCTRL_ROCKCHIP_RK3399=y
-+CONFIG_DM_PMIC=y
-+CONFIG_PMIC_RK8XX=y
-+CONFIG_REGULATOR_PWM=y
-+CONFIG_DM_REGULATOR_FIXED=y
-+CONFIG_REGULATOR_RK8XX=y
-+CONFIG_PWM_ROCKCHIP=y
-+CONFIG_RAM=y
-+CONFIG_SPL_RAM=y
-+CONFIG_BAUDRATE=1500000
-+CONFIG_DEBUG_UART_SHIFT=2
-+CONFIG_SYSRESET=y
-+CONFIG_USB=y
-+CONFIG_USB_XHCI_HCD=y
-+CONFIG_USB_XHCI_DWC3=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_EHCI_GENERIC=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_USB_HOST_ETHER=y
-+CONFIG_USB_ETHER_ASIX=y
-+CONFIG_USB_ETHER_ASIX88179=y
-+CONFIG_USB_ETHER_MCS7830=y
-+CONFIG_USB_ETHER_RTL8152=y
-+CONFIG_USB_ETHER_SMSC95XX=y
-+CONFIG_USE_TINY_PRINTF=y
-+CONFIG_ERRNO_STR=y

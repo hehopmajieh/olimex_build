@@ -1,13 +1,22 @@
-diff --git a/arch/arm/dts/rk3399-nanopi4-common.dtsi b/arch/arm/dts/rk3399-nanopi4-common.dtsi
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 31d9256..04be27e 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -48,6 +48,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += \
+ 	rk3368-px5-evb.dtb \
+ 	rk3399-evb.dtb \
+ 	rk3399-firefly.dtb \
++	rk3399-orangepi.dtb \
+ 	rk3399-puma-ddr1333.dtb \
+ 	rk3399-puma-ddr1600.dtb \
+ 	rk3399-puma-ddr1866.dtb \
+diff --git a/arch/arm/dts/rk3399-orangepi.dts b/arch/arm/dts/rk3399-orangepi.dts
 new file mode 100644
 index 0000000..2b87c32
 --- /dev/null
-+++ b/arch/arm/dts/rk3399-nanopi4-common.dtsi
-@@ -0,0 +1,728 @@
++++ b/arch/arm/dts/rk3399-orangepi.dts
+@@ -0,0 +1,726 @@
 +/*
-+ * Copyright (c) 2018 FriendlyElec Computer Tech. Co., Ltd.
-+ * (http://www.friendlyarm.com)
-+ *
 + * Copyright (c) 2016 Fuzhou Rockchip Electronics Co., Ltd
 + *
 + * This file is dual-licensed: you can use it either under the terms
@@ -49,14 +58,15 @@ index 0000000..2b87c32
 + *     OTHER DEALINGS IN THE SOFTWARE.
 + */
 +
++/dts-v1/;
 +#include <dt-bindings/pwm/pwm.h>
 +#include <dt-bindings/pinctrl/rockchip.h>
 +#include "rk3399.dtsi"
 +#include "rk3399-sdram-lpddr3-4GB-1600.dtsi"
 +
 +/ {
-+	model = "FriendlyElec boards based on Rockchip RK3399";
-+	compatible = "friendlyelec,nanopi4",
++	model = "OrangePi boards based on Rockchip RK3399";
++	compatible = "xunlong,orangepi-rk3399",
 +		   "rockchip,rk3399";
 +
 +	chosen {
@@ -65,10 +75,10 @@ index 0000000..2b87c32
 +	};
 +
 +	mach: board {
-+		compatible = "friendlyelec,board";
-+		machine = "NANOPI4";
++		compatible = "xunlong,board";
++		machine = "OrangePi-RK3399";
 +		hwrev = <255>;
-+		model = "NanoPi 4 Series";
++		model = "OrangePi Series";
 +	};
 +
 +	fiq_debugger: fiq-debugger {
@@ -732,47 +742,11 @@ index 0000000..2b87c32
 +		};
 +	};
 +};
-diff --git a/arch/arm/dts/rk3399-nanopi4-rev00.dts b/arch/arm/dts/rk3399-nanopi4-rev00.dts
-new file mode 100644
-index 0000000..f1ad210
---- /dev/null
-+++ b/arch/arm/dts/rk3399-nanopi4-rev00.dts
-@@ -0,0 +1,30 @@
-+/*
-+ * Copyright (c) 2018 FriendlyElec Computer Tech. Co., Ltd.
-+ * (http://www.friendlyarm.com)
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-+ */
-+
-+/dts-v1/;
-+#include "rk3399-nanopi4-common.dtsi"
-+
-+/ {
-+	model = "FriendlyElec NanoPC-T4";
-+	compatible = "friendlyelec,nanopc-t4", "rockchip,rk3399";
-+};
-+
-+&mach {
-+	hwrev = <0>;
-+	model = "NanoPC-T4";
-+};
-diff --git a/configs/nanopi4_defconfig b/configs/nanopi4_defconfig
+diff --git a/configs/orangepi-rk3399_defconfig b/configs/orangepi-rk3399_defconfig
 new file mode 100644
 index 0000000..662c46e
 --- /dev/null
-+++ b/configs/nanopi4_defconfig
++++ b/configs/orangepi-rk3399_defconfig
 @@ -0,0 +1,75 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_ROCKCHIP=y
@@ -785,7 +759,7 @@ index 0000000..662c46e
 +CONFIG_DEBUG_UART_BASE=0xFF1A0000
 +CONFIG_DEBUG_UART_CLOCK=24000000
 +CONFIG_SPL_STACK_R_ADDR=0x80000
-+CONFIG_DEFAULT_DEVICE_TREE="rk3399-nanopi4-rev00"
++CONFIG_DEFAULT_DEVICE_TREE="rk3399-orangepi"
 +CONFIG_DEBUG_UART=y
 +CONFIG_FIT=y
 +CONFIG_SPL_LOAD_FIT=y
