@@ -6646,7 +6646,7 @@ index e69de29..38a59ac 100644
 +	fragment@0 {
 +		target-path = "/aliases";
 +		__overlay__ {
-+			serial3 = "/soc/serial@05000c00";
++			serial3 = "/soc/serial@5000c00";
 +		};
 +	};
 +
