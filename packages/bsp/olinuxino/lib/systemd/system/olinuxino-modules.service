@@ -4,7 +4,6 @@ After=systemd-modules-load.service
 
 [Service]
 ExecStart=/bin/bash /usr/bin/olinuxino_modules.sh start
-ExecStop=/bin/bash /usr/bin/olinuxino_modules.sh stop
 
 [Install]
 WantedBy=sysinit.target
