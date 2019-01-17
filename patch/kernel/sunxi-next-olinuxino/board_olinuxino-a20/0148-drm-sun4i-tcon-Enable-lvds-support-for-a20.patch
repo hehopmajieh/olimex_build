@@ -1,27 +1,19 @@
 diff --git a/drivers/gpu/drm/sun4i/sun4i_tcon.c b/drivers/gpu/drm/sun4i/sun4i_tcon.c
-index 3fb084f802e2..e426fbc8bf34 100644
+index e4f456774..5140bc4af 100644
 --- a/drivers/gpu/drm/sun4i/sun4i_tcon.c
 +++ b/drivers/gpu/drm/sun4i/sun4i_tcon.c
-@@ -17,6 +17,7 @@
- #include <drm/drm_encoder.h>
- #include <drm/drm_modes.h>
- #include <drm/drm_of.h>
-+#include <drm/drm_panel.h>
- 
- #include <uapi/drm/drm_mode.h>
- 
-@@ -182,15 +183,23 @@ void sun4i_tcon_set_status(struct sun4i_tcon *tcon,
+@@ -184,15 +184,24 @@ void sun4i_tcon_set_status(struct sun4i_tcon *tcon,
  		return;
  	}
  
 -	if (is_lvds && !enabled)
--		sun4i_tcon_lvds_set_status(tcon, encoder, false);
 +	if (is_lvds && !enabled) {
 +		if (tcon->quirks->lvds_set_status)
 +			tcon->quirks->lvds_set_status(tcon, encoder, false);
 +		else
 +			sun4i_tcon_lvds_set_status(tcon, encoder, false);
 +	}
+ 		sun4i_tcon_lvds_set_status(tcon, encoder, false);
  
  	regmap_update_bits(tcon->regs, SUN4I_TCON_GCTL_REG,
  			   SUN4I_TCON_GCTL_TCON_ENABLE,
@@ -38,7 +30,7 @@ index 3fb084f802e2..e426fbc8bf34 100644
  
  	sun4i_tcon_channel_set_status(tcon, channel, enabled);
  }
-@@ -347,6 +356,7 @@ static void sun4i_tcon0_mode_set_lvds(struct sun4i_tcon *tcon,
+@@ -411,6 +420,7 @@ static void sun4i_tcon0_mode_set_lvds(struct sun4i_tcon *tcon,
  	unsigned int bp;
  	u8 clk_delay;
  	u32 reg, val = 0;
@@ -46,11 +38,10 @@ index 3fb084f802e2..e426fbc8bf34 100644
  
  	WARN_ON(!tcon->quirks->has_channel_0);
  
-@@ -394,6 +404,11 @@ static void sun4i_tcon0_mode_set_lvds(struct sun4i_tcon *tcon,
+@@ -461,6 +471,10 @@ static void sun4i_tcon0_mode_set_lvds(struct sun4i_tcon *tcon,
  	else
  		reg |= SUN4I_TCON0_LVDS_IF_BITWIDTH_18BITS;
  
-+
 +	ep = of_graph_get_endpoint_by_regs(tcon->dev->of_node, 1, 0);
 +	if (of_property_read_bool(ep, "allwinner,lvds-dual-link"))
 +		reg |= SUN4I_TCON0_LVDS_IF_LINK_DUAL;
@@ -58,19 +49,18 @@ index 3fb084f802e2..e426fbc8bf34 100644
  	regmap_write(tcon->regs, SUN4I_TCON0_LVDS_IF_REG, reg);
  
  	/* Setup the polarity of the various signals */
-@@ -1244,6 +1271,49 @@ static int sun6i_tcon_set_mux(struct sun4i_tcon *tcon,
+@@ -1311,6 +1325,48 @@ static int sun6i_tcon_set_mux(struct sun4i_tcon *tcon,
  	return 0;
  }
  
 +static void sun4i_a10_tcon_lvds_set_status(struct sun4i_tcon *tcon,
-+					  const struct drm_encoder *encoder,
-+					  bool enabled)
++					   const struct drm_encoder *encoder,
++					   bool enabled)
 +{
 +	if (enabled) {
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_IF_REG,
-+				   SUN4I_TCON0_LVDS_IF_EN,
-+				   SUN4I_TCON0_LVDS_IF_EN);
-+
++					       SUN4I_TCON0_LVDS_IF_EN,
++					       SUN4I_TCON0_LVDS_IF_EN);
 +
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_ANA0_REG,
 +					       0x3F310000,
@@ -81,13 +71,13 @@ index 3fb084f802e2..e426fbc8bf34 100644
 +		udelay(2);
 +
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_ANA1_REG,
-+				   0x7c007c00,
-+				   0x7c007c00);
++					       0x7c007c00,
++					       0x7c007c00);
 +		udelay(2);
 +
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_ANA1_REG,
-+				   0x001f001f,
-+				   0x001f001f);
++					       0x001f001f,
++					       0x001f001f);
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_ANA0_REG,
 +					       1 << 22,
 +					       1 << 22);
@@ -101,14 +91,14 @@ index 3fb084f802e2..e426fbc8bf34 100644
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_ANA0_REG,
 +					       0x3F310000, 0);
 +		regmap_update_bits(tcon->regs, SUN4I_TCON0_LVDS_IF_REG,
-+				   SUN4I_TCON0_LVDS_IF_EN, 0);
++					       SUN4I_TCON0_LVDS_IF_EN, 0);
 +	}
 +}
 +
  static const struct sun4i_tcon_quirks sun4i_a10_quirks = {
  	.has_channel_0		= true,
  	.has_channel_1		= true,
-@@ -1271,10 +1341,12 @@ static const struct sun4i_tcon_quirks sun6i_a31s_quirks = {
+@@ -1338,10 +1394,12 @@ static const struct sun4i_tcon_quirks sun6i_a31s_quirks = {
  };
  
  static const struct sun4i_tcon_quirks sun7i_a20_quirks = {
@@ -122,10 +112,10 @@ index 3fb084f802e2..e426fbc8bf34 100644
  
  static const struct sun4i_tcon_quirks sun8i_a33_quirks = {
 diff --git a/drivers/gpu/drm/sun4i/sun4i_tcon.h b/drivers/gpu/drm/sun4i/sun4i_tcon.h
-index f6a071cd5a6f..9996f60a1edf 100644
+index 3d492c8be..4e7ef8adc 100644
 --- a/drivers/gpu/drm/sun4i/sun4i_tcon.h
 +++ b/drivers/gpu/drm/sun4i/sun4i_tcon.h
-@@ -99,6 +99,8 @@
+@@ -102,6 +102,8 @@
  
  #define SUN4I_TCON0_LVDS_IF_REG			0x84
  #define SUN4I_TCON0_LVDS_IF_EN				BIT(31)
@@ -134,22 +124,22 @@ index f6a071cd5a6f..9996f60a1edf 100644
  #define SUN4I_TCON0_LVDS_IF_BITWIDTH_MASK		BIT(26)
  #define SUN4I_TCON0_LVDS_IF_BITWIDTH_18BITS		(1 << 26)
  #define SUN4I_TCON0_LVDS_IF_BITWIDTH_24BITS		(0 << 26)
-@@ -201,6 +203,8 @@
+@@ -203,6 +205,7 @@
+ #define SUN6I_TCON0_LVDS_ANA0_C(x)			(((x) & 3) << 17)
  #define SUN6I_TCON0_LVDS_ANA0_V(x)			(((x) & 3) << 8)
  #define SUN6I_TCON0_LVDS_ANA0_PD(x)			(((x) & 3) << 4)
- 
 +#define SUN4I_TCON0_LVDS_ANA1_REG		0x224
-+
+ 
  #define SUN4I_TCON1_FILL_CTL_REG		0x300
  #define SUN4I_TCON1_FILL_BEG0_REG		0x304
- #define SUN4I_TCON1_FILL_END0_REG		0x308
-@@ -227,6 +231,9 @@ struct sun4i_tcon_quirks {
+@@ -230,6 +233,10 @@ struct sun4i_tcon_quirks {
  
  	/* callback to handle tcon muxing options */
  	int	(*set_mux)(struct sun4i_tcon *, const struct drm_encoder *);
 +
 +	/* callback to handle specific LVDS analog setup */
 +	void	(*lvds_set_status)(struct sun4i_tcon *, const struct drm_encoder *, bool);
++
  };
  
  struct sun4i_tcon {

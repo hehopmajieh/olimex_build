@@ -1,8 +1,8 @@
 diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
-index 0be511d..24dc409 100644
+index a57d6e9..51b34f6 100644
 --- a/drivers/mfd/axp20x.c
 +++ b/drivers/mfd/axp20x.c
-@@ -28,6 +28,7 @@
+@@ -27,6 +27,7 @@
  #include <linux/mfd/core.h>
  #include <linux/of_device.h>
  #include <linux/acpi.h>
@@ -10,7 +10,7 @@ index 0be511d..24dc409 100644
  
  #define AXP20X_OFF	0x80
  
-@@ -81,6 +82,7 @@ static const struct regmap_range axp20x_volatile_ranges[] = {
+@@ -72,6 +73,7 @@ static const struct regmap_range axp20x_volatile_ranges[] = {
  	regmap_reg_range(AXP20X_IRQ1_EN, AXP20X_IRQ5_STATE),
  	regmap_reg_range(AXP20X_ACIN_V_ADC_H, AXP20X_IPSOUT_V_HIGH_L),
  	regmap_reg_range(AXP20X_GPIO20_SS, AXP20X_GPIO3_CTRL),
@@ -18,8 +18,8 @@ index 0be511d..24dc409 100644
  	regmap_reg_range(AXP20X_FG_RES, AXP20X_RDC_L),
  };
  
-@@ -794,6 +796,611 @@ static void axp20x_power_off(void)
- 	msleep(500);
+@@ -582,6 +584,611 @@ static void axp20x_power_off(void)
+ 		     AXP20X_OFF);
  }
  
 +#define kobj_to_device(x) container_of(x, struct device, kobj)
@@ -630,7 +630,7 @@ index 0be511d..24dc409 100644
  int axp20x_match_device(struct axp20x_dev *axp20x)
  {
  	struct device *dev = axp20x->dev;
-@@ -953,6 +1560,10 @@ int axp20x_device_probe(struct axp20x_dev *axp20x)
+@@ -669,6 +1276,10 @@ int axp20x_device_probe(struct axp20x_dev *axp20x)
  		pm_power_off = axp20x_power_off;
  	}
  
@@ -641,7 +641,7 @@ index 0be511d..24dc409 100644
  	dev_info(axp20x->dev, "AXP20X driver loaded\n");
  
  	return 0;
-@@ -966,6 +1577,10 @@ int axp20x_device_remove(struct axp20x_dev *axp20x)
+@@ -682,6 +1293,10 @@ int axp20x_device_remove(struct axp20x_dev *axp20x)
  		pm_power_off = NULL;
  	}
  

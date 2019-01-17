@@ -53,7 +53,7 @@ index 624c3fd..30343f1 100644
 @@ -4557,6 +4557,12 @@ S:	Supported
  F:	drivers/gpu/drm/nouveau/
  F:	include/uapi/drm/nouveau_drm.h
-
+ 
 +DRM DRIVER FOR OLIMEX LCD-OLINUXINO PANELS
 +M:	Stefan Mavrodiev <stefan@olimex.com>
 +S:	Maintained
@@ -70,7 +70,7 @@ index 25682ff..0292994 100644
 @@ -81,6 +81,16 @@ config DRM_PANEL_LG_LG4573
  	  Say Y here if you want to enable support for LG4573 RGB panel.
  	  To compile this driver as a module, choose M here.
-
+ 
 +config DRM_PANEL_OLIMEX_LCD_OLINUXINO
 +	tristate "Olimex LCD-OLinuXino panel"
 +	depends on OF
@@ -101,7 +101,7 @@ new file mode 100644
 index 0000000..d69aaf7
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-olimex-lcd-olinuxino.c
-@@ -0,0 +1,333 @@
+@@ -0,0 +1,332 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * LCD-OLinuXino support for panel driver
@@ -284,7 +284,6 @@ index 0000000..d69aaf7
 +		mode->vtotal = lcd_mode->vactive + lcd_mode->vfp +
 +			       lcd_mode->vpw + lcd_mode->vbp;
 +		mode->vrefresh = lcd_mode->refresh;
-+		mode->flags = lcd_mode->flags;
 +
 +		/* Always make the first mode preferred */
 +		if (i == 0)
@@ -367,7 +366,7 @@ index 0000000..d69aaf7
 +		return -EINVAL;
 +	}
 +
-+	dev_info(dev, "Detected %s, Rev.%s, Serial: %08x\n",
++	dev_info(dev, "Detected %s, Rev. %s, Serial: %08x\n",
 +		 lcd->eeprom.info.name,
 +		 lcd->eeprom.revision,
 +		 lcd->eeprom.serial);
