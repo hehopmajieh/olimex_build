@@ -1,5 +1,5 @@
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index b5bd3de..bf36006 100644
+index b5bd3de87..bf3600657 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -998,6 +998,7 @@ dtb-$(CONFIG_MACH_SUN7I) += \
@@ -11,7 +11,7 @@ index b5bd3de..bf36006 100644
  	sun7i-a20-olinuxino-lime2-emmc.dtb \
  	sun7i-a20-olinuxino-micro.dtb \
 diff --git a/arch/arm/boot/dts/sun7i-a20-olimex-som-evb-emmc.dts b/arch/arm/boot/dts/sun7i-a20-olimex-som-evb-emmc.dts
-index 81ebc97..f155f2f 100644
+index 81ebc97b7..f155f2f5b 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olimex-som-evb-emmc.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olimex-som-evb-emmc.dts
 @@ -14,24 +14,12 @@
@@ -44,7 +44,7 @@ index 81ebc97..f155f2f 100644
 -	};
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olimex-som-evb.dts b/arch/arm/boot/dts/sun7i-a20-olimex-som-evb.dts
-index f080f82..b15cc77 100644
+index f080f82b5..b15cc77aa 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olimex-som-evb.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olimex-som-evb.dts
 @@ -1,163 +1,36 @@
@@ -375,7 +375,7 @@ index f080f82..b15cc77 100644
 +	gpio = <&pio 1 9 GPIO_ACTIVE_HIGH>; /* PB9 */
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb-emmc.dts b/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb-emmc.dts
-index c56620a..24db59a 100644
+index c56620a8f..24db59aa0 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb-emmc.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb-emmc.dts
 @@ -12,25 +12,8 @@
@@ -405,10 +405,10 @@ index c56620a..24db59a 100644
 -	};
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb.dts b/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb.dts
-index 3d7b5c8..1af79a0 100644
+index 3d7b5c848..213a0f556 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olimex-som204-evb.dts
-@@ -7,182 +7,73 @@
+@@ -7,182 +7,85 @@
   */
  
  /dts-v1/;
@@ -516,56 +516,69 @@ index 3d7b5c8..1af79a0 100644
  &gmac {
 -	pinctrl-names = "default";
 -	pinctrl-0 = <&gmac_pins_rgmii_a>;
- 	phy = <&phy3>;
+-	phy = <&phy3>;
 -	phy-mode = "rgmii";
 -	phy-supply = <&reg_vcc3v3>;
- 
+-
 -	snps,reset-gpio = <&pio 0 17 GPIO_ACTIVE_HIGH>;
-+	snps,reset-gpio = <&pio 0 17 GPIO_ACTIVE_HIGH>; /* PA17 */
- 	snps,reset-active-low;
- 	snps,reset-delays-us = <0 10000 1000000>;
+-	snps,reset-active-low;
+-	snps,reset-delays-us = <0 10000 1000000>;
 -	status = "okay";
- 
- 	phy3: ethernet-phy@3 {
- 		reg = <3>;
- 	};
- };
+-
+-	phy3: ethernet-phy@3 {
+-		reg = <3>;
+-	};
+-};
++	phy-handle = <&phy3>;
  
 -&hdmi {
 -	status = "okay";
 -};
--
++	/* A20-SOM204 has different phy address */
++	/delete-node/ ethernet-phy@1;
+ 
 -&hdmi_out {
 -	hdmi_out_con: endpoint {
 -		remote-endpoint = <&hdmi_con_in>;
 -	};
 -};
--
++	mdio {
++		compatible = "snps,dwmac-mdio";
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 
 -&i2c0 {
 -	pinctrl-names = "default";
 -	pinctrl-0 = <&i2c0_pins_a>;
 -	status = "okay";
--
++		phy3: ethernet-phy@3 {
++			compatible = "ethernet-phy-ieee802.3-c22";
+ 
 -	axp209: pmic@34 {
 -		reg = <0x34>;
 -		interrupt-parent = <&nmi_intc>;
 -		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
 -	};
 -};
--
++			reset-gpios = <&pio 0 17 GPIO_ACTIVE_LOW>; /* PA17 */
++			reset-assert-us = <10000>;
++			reset-deassert-us = <1000000>;
++			reg = <3>;
++		};
+ 
 -/* Exposed to UEXT1 */
 -&i2c1 {
 -	pinctrl-names = "default";
 -	pinctrl-0 = <&i2c1_pins_a>;
 -	status = "okay";
--
+ 
 -	eeprom: eeprom@50 {
 -		compatible = "atmel,24c16";
 -		reg = <0x50>;
 -		pagesize = <16>;
--	};
--};
--
+ 	};
+ };
+ 
 -/* Exposed to UEXT2 */
 -&i2c2 {
 -	pinctrl-names = "default";
@@ -598,7 +611,7 @@ index 3d7b5c8..1af79a0 100644
  	status = "okay";
  
  	rtl8723bs: sdio_wifi@1 {
-@@ -190,18 +81,6 @@
+@@ -190,18 +93,6 @@
  	};
  };
  
@@ -617,7 +630,7 @@ index 3d7b5c8..1af79a0 100644
  &pio {
  	bt_uart_pins: bt_uart_pins@0 {
  		pins = "PG6", "PG7", "PG8";
-@@ -209,88 +88,8 @@
+@@ -209,88 +100,8 @@
  	};
  };
  
@@ -707,7 +720,7 @@ index 3d7b5c8..1af79a0 100644
  };
  
  /* Used for RTL8723BS bluetooth */
-@@ -307,28 +106,6 @@
+@@ -307,28 +118,6 @@
  	status = "okay";
  };
  
@@ -740,10 +753,10 @@ index 3d7b5c8..1af79a0 100644
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-common.dtsi b/arch/arm/boot/dts/sun7i-a20-olinuxino-common.dtsi
 new file mode 100644
-index 0000000..573bde4
+index 000000000..1eb061869
 --- /dev/null
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-common.dtsi
-@@ -0,0 +1,298 @@
+@@ -0,0 +1,305 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Common Device Tree Source binding for Olimex A20 based boards
@@ -814,13 +827,20 @@ index 0000000..573bde4
 +&gmac {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&gmac_pins_rgmii_a>;
-+	phy = <&phy1>;
++	phy-handle = <&phy1>;
 +	phy-mode = "rgmii";
 +	phy-supply = <&reg_vcc3v3>;
 +	status = "okay";
 +
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
++	mdio {
++		compatible = "snps,dwmac-mdio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		phy1: ethernet-phy@1 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <1>;
++		};
 +	};
 +};
 +
@@ -1044,7 +1064,7 @@ index 0000000..573bde4
 +};
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime-emmc.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime-emmc.dts
 new file mode 100644
-index 0000000..0e80540
+index 000000000..0e80540cc
 --- /dev/null
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime-emmc.dts
 @@ -0,0 +1,19 @@
@@ -1068,7 +1088,7 @@ index 0000000..0e80540
 +	status = "okay";
 +};
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime.dts
-index d20fd03..b6d6af70 100644
+index d20fd0359..b6d6af70c 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime.dts
 @@ -1,240 +1,43 @@
@@ -1321,7 +1341,7 @@ index d20fd03..b6d6af70 100644
 +	gpio = <&pio 1 9 GPIO_ACTIVE_HIGH>; /* PB9 */
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2-emmc.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2-emmc.dts
-index 81f376f..82926db 100644
+index 81f376f2a..82926dbc0 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2-emmc.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2-emmc.dts
 @@ -1,80 +1,22 @@
@@ -1414,7 +1434,7 @@ index 81f376f..82926db 100644
 -	};
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2.dts
-index b828677..ab5f00a 100644
+index b828677f3..ab5f00a76 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-lime2.dts
 @@ -1,290 +1,37 @@
@@ -1718,7 +1738,7 @@ index b828677..ab5f00a 100644
 +	gpio = <&pio 2 17 GPIO_ACTIVE_HIGH>; /* PC17 */
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro-emmc.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro-emmc.dts
-index d99e7b1..288a98f 100644
+index d99e7b193..288a98fda 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro-emmc.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro-emmc.dts
 @@ -1,70 +1,18 @@
@@ -1799,7 +1819,7 @@ index d99e7b1..288a98f 100644
 -	};
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index 866d230..3ed559c 100644
+index 866d23059..3ed559c1a 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 @@ -1,174 +1,42 @@
