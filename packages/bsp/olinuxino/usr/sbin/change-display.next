@@ -1,0 +1,85 @@
+#!/bin/bash
+
+set -e
+
+# read in board info
+[[ -f /etc/armbian-release ]] && source /etc/armbian-release
+backtitle="OLinuXino display configurator for Armbian v${VERSION}"
+
+
+function display_reboot_dialog()
+{
+	dialog --title "Almost done" --backtitle "$backtitle" --yes-label "Reboot" --no-label "Exit" --yesno "\nAll done. \n
+Board must be rebooted to apply changes." 7 70
+	[[ $? -ne 0 ]] && exit 0
+	reboot
+}
+
+function display_error_dialog()
+{
+	dialog --title "$1" --backtitle "$backtitle" --msgbox "\n$2" 0 0
+	exit 1
+}
+
+
+# Check if tools are installed
+! mkenv -v > /dev/null 2>&1 && \
+	echo "mkenv tool is missing. Run: pip3 install uboot" && \
+	exit 1
+
+# Check if /boot/uboot.env exist
+[[ ! -e /boot/uboot.env ]] && \
+	echo "/boot/uboot.env is missing. Run: saveenv inside u-boot shell" && \
+	exit 1
+
+
+options=(
+	0    "LCD-OLinuXino|Auto detection"
+	7859 "LCD-OLinuXino-4.3TS|480x272"
+	8630 "LCD-OLinuXino-5|800x480"
+	7864 "LCD-OLinuXino-7|800x480"
+	9278 "LCD-OLinuXino-7CTS|1024x600"
+	7862 "LCD-OLinuXino-10|1024x600"
+	9284 "LCD-OLinuXino-10CTS|1024x600"
+	)
+
+# If board is A20 add LVDS support
+if [[ $(tr -d '\0' </proc/device-tree/model) == "A20"* ]]; then
+	options+=(
+	7891 "LCD-OLinuXino-15.6|1366x768"
+	7894 "LCD-OLinuXino-15.6FHD|1920x1080"
+	)
+fi
+
+cmd=(dialog --title "Configure LCD output" --backtitle "$backtitle" --column-separator "|" --menu "\nSelect LCD panel: \n" 17 70 16)
+choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+[[ $? -ne 0 ]] && exit 1
+
+for choice in $choices; do
+	id=$choice
+	break
+done
+
+# Convert uboot.env to uboot.txt
+! mkenv extract -s 131072 /boot/uboot.env > /dev/null 2>&1 && \
+	display_error_dialog "Error" "Error extracting /boot/uboot.env" &&
+	exit 1
+
+
+# Modify
+[[ $id == 0 ]] && unset id
+
+sed -i \
+	-e '/^#\?\(\s*lcd_olinuxino\s*=\s*\).*/{s//\1'${id//\//\\/}'/;:a;n;ba;q}' \
+	-e '$alcd_olinuxino='${id//\//\\/} /boot/uboot.txt
+
+# Remove head
+#sed -i '/arch=arm/,$!d' /boot/uboot.txt
+
+# Convert uboot.txt to uboot.txt
+! mkenv create -s 131072 -r /boot/uboot.txt /boot/uboot.env > /dev/null 2>&1 && \
+	display_error_dialog "Error" "Error extracting /boot/uboot.env" &&
+	rm /boot/uboot.txt && \
+	exit 1
+
+display_reboot_dialog
