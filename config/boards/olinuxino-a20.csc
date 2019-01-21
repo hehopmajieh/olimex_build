@@ -19,3 +19,59 @@ BOARDRATING=""
 CHIP="http://docs.armbian.com/Hardware_Allwinner-A20/"
 HARDWARE="https://www.olimex.com/Products/OLinuXino/A20/"
 FORUMS="http://forum.armbian.com/index.php/forum/7-allwinner-a10a20/"
+
+# Specific function for SPI flash write
+write_uboot_platform_mtd()
+{
+	for mtd in ${spicheck[@]}; do
+
+	local _name=$(mtdinfo /dev/$mtd | grep "Name: "| awk '{print $2}')
+	local _i=0
+
+	if [[ $_name == "SPI.u-boot-env"* ]]; then
+
+		# Check for environment file
+		if [[ ! -f /boot/uboot.env ]]; then
+			flash_erase /dev/$mtd 0 0
+			continue
+		fi
+
+		flashcp -v /boot/uboot.env /dev/$mtd | stdbuf -o0 tr '\r' '\n' \
+		| while read line; do
+
+			local _progress=$(echo "$line" | grep -o -P '[0-9]*(\.[0-9]*)?(?=%)')
+
+			[[ $line == *"Erasing blocks"* ]] && _i=0
+			[[ $line == *"Writing data"* ]] && _i=1
+			[[ $line == *"Verifying data"* ]] && _i=2
+
+			echo XXX
+			echo $((($_i * 33) + (_progress / 3)))
+			echo "\n\n  Installing uboot.env to \Z1$_name\Zn:"
+			echo "\n\n  $line"
+			echo XXX
+
+		done \
+		| dialog --colors --backtitle "$backtitle" --title " $title " --gauge "Installing uboot.env to $\Z1$_name\Zn" 11 80
+
+	elif [[ $_name == "SPI.u-boot" ]]; then
+		flashcp -v $1/u-boot-sunxi-with-spl.bin /dev/$mtd | stdbuf -o0 tr '\r' '\n' \
+		| while read line; do
+
+			local _progress=$(echo "$line" | grep -o -P '[0-9]*(\.[0-9]*)?(?=%)')
+
+			[[ $line == *"Erasing blocks"* ]] && _i=0
+			[[ $line == *"Writing data"* ]] && _i=1
+			[[ $line == *"Verifying data"* ]] && _i=2
+
+			echo XXX
+			echo $((($_i * 33) + (_progress / 3)))
+			echo "\n\n  Installing u-boot-sunxi-with-spl.bin to \Z1$_name\Zn:"
+			echo "\n\n  $line"
+			echo XXX
+
+		done \
+		| dialog --colors --backtitle "$backtitle" --title " $title " --gauge "Installing u-boot-sunxi-with-spl.bin to $\Z1$_name\Zn" 11 80
+	fi
+done
+}
