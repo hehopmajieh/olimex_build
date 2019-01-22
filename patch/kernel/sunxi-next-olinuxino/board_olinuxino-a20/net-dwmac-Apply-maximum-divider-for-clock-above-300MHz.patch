@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+index 2103b8657..937f5d664 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -253,7 +253,7 @@ static void stmmac_clk_csr_set(struct stmmac_priv *priv)
+ 			priv->clk_csr = STMMAC_CSR_100_150M;
+ 		else if ((clk_rate >= CSR_F_150M) && (clk_rate < CSR_F_250M))
+ 			priv->clk_csr = STMMAC_CSR_150_250M;
+-		else if ((clk_rate >= CSR_F_250M) && (clk_rate < CSR_F_300M))
++		else if (clk_rate >= CSR_F_250M)
+ 			priv->clk_csr = STMMAC_CSR_250_300M;
+ 	}
+ 
