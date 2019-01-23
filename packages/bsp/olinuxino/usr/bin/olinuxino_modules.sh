@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ID="/proc/device-tree/id"
+ID="$(tr -d '\0' < /proc/device-tree/id)"
 
 case "$1" in
 	start)
