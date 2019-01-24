@@ -88,7 +88,7 @@ create_armbian()
 	else
 		[[ -n $2 ]] && ( mount -o compress-force=zlib $2 ${TempDir}/rootfs 2> /dev/null || mount $2 ${TempDir}/rootfs )
 		[[ -n $1 && $1 != "spi" ]] && mount $1 ${TempDir}/bootfs
-		[[ -n $1 && -n $2 && $1 == "spi" && $2 == ${emmccheck}p* ]] && mount $2 ${TempDir}/bootfs
+		[[ -n $1 && -n $2 ]] && mount $2 ${TempDir}/bootfs
 	fi
 	rm -rf ${TempDir}/bootfs/* ${TempDir}/rootfs/*
 
