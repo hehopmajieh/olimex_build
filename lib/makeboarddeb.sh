@@ -178,10 +178,7 @@ create_board_package()
 	# ${BOARD} BSP post installation script
 	#
 
-	# enable ramlog only if it was enabled before
-	if [ -n "\$(service log2ram status 2> /dev/null)" ]; then
-			systemctl --no-reload enable armbian-ramlog.service
-	fi
+	systemctl --no-reload enable armbian-ramlog.service
 
 	# check if it was disabled in config and disable in new service
 	if [ -n "\$(grep -w '^ENABLED=false' /etc/default/log2ram 2> /dev/null)" ]; then
@@ -214,17 +211,7 @@ create_board_package()
 			echo "Updating bootscript"
 
 			# copy new bootscript
-			cp /usr/share/armbian/$bootscript_dst /boot  >/dev/null 2>&1
-
-			# build new bootscript
-			if [ -f /boot/boot.cmd ]; then
-				mkimage -C none -A arm -T script -d /boot/boot.cmd /boot/boot.scr  >/dev/null 2>&1
-			elif [ -f /boot/boot.ini ]; then
-				rootdev=\$(sed -e 's/^.*root=//' -e 's/ .*\$//' < /proc/cmdline)
-				rootfstype=\$(sed -e 's/^.*rootfstype=//' -e 's/ .*$//' < /proc/cmdline)
-				sed -i "s/setenv rootfstype.*/setenv rootfstype \\"\$rootfstype\\"/" /boot/boot.ini
-				sed -i "s/setenv rootdev.*/setenv rootdev \\"\$rootdev\\"/" /boot/boot.ini
-			fi
+			cp -f /usr/share/armbian/$bootscript_dst /boot/${bootscript_dst}.new  >/dev/null 2>&1
 
 			# cleanup old bootscript backup
 			[ -f /usr/share/armbian/boot.cmd ] && ls /usr/share/armbian/boot.cmd-* | head -n -5 | xargs rm -f --
