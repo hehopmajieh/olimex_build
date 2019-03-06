@@ -13,7 +13,7 @@ Signed-off-by: Vasily Khoruzhick <anarsoul@gmail.com>
  1 file changed, 20 insertions(+)
 
 diff --git a/drivers/bluetooth/hci_h5.c b/drivers/bluetooth/hci_h5.c
-index 6e047df4f475..9cc10e299fa8 100644
+index 85121d7fb..0908fc71e 100644
 --- a/drivers/bluetooth/hci_h5.c
 +++ b/drivers/bluetooth/hci_h5.c
 @@ -26,6 +26,7 @@
@@ -24,26 +24,31 @@ index 6e047df4f475..9cc10e299fa8 100644
  #include <linux/serdev.h>
  #include <linux/skbuff.h>
  
-@@ -821,6 +822,11 @@ static int h5_serdev_probe(struct serdev_device *serdev)
- 		if (h5->vnd->acpi_gpio_map)
+@@ -820,9 +821,15 @@ static int h5_serdev_probe(struct serdev_device *serdev)
+ 		h5->vnd = (const struct h5_vnd *)match->driver_data;
+ 		h5->id  = (char *)match->id;
+ 
+-		if (h5->vnd->acpi_gpio_map)
++		if (h5->vnd->acpi_gpio_map) {
  			devm_acpi_dev_add_driver_gpios(dev,
  						       h5->vnd->acpi_gpio_map);
-+	} else {
-+		h5->vnd = (const struct h5_vnd *)
++		} else {
++			h5->vnd = (const struct h5_vnd *)
 +				of_device_get_match_data(&serdev->dev);
-+		of_property_read_string(serdev->dev.of_node,
-+					"firmware-postfix", &h5->id);
++			of_property_read_string(serdev->dev.of_node,
++						"firmware-postfix", &h5->id);
++		}
  	}
  
  	h5->enable_gpio = devm_gpiod_get_optional(dev, "enable", GPIOD_OUT_LOW);
-@@ -944,12 +950,26 @@ static const struct acpi_device_id h5_acpi_match[] = {
+@@ -1024,6 +1031,19 @@ static const struct acpi_device_id h5_acpi_match[] = {
  MODULE_DEVICE_TABLE(acpi, h5_acpi_match);
  #endif
  
 +static struct h5_vnd rtl8723_of_vnd = {
-+	.setup		= h5_btrtl_setup,
-+	.open		= h5_btrtl_open,
-+	.close		= h5_btrtl_close,
++	.setup = h5_btrtl_setup,
++	.open = h5_btrtl_open,
++	.close = h5_btrtl_close,
 +};
 +
 +static const struct of_device_id h5_of_match[] = {
@@ -53,16 +58,14 @@ index 6e047df4f475..9cc10e299fa8 100644
 +};
 +MODULE_DEVICE_TABLE(of, h5_of_match);
 +
- static struct serdev_device_driver h5_serdev_driver = {
- 	.probe = h5_serdev_probe,
- 	.remove = h5_serdev_remove,
+ static const struct dev_pm_ops h5_serdev_pm_ops = {
+ 	SET_SYSTEM_SLEEP_PM_OPS(h5_serdev_suspend, h5_serdev_resume)
+ };
+@@ -1034,6 +1054,7 @@ static struct serdev_device_driver h5_serdev_driver = {
  	.driver = {
  		.name = "hci_uart_h5",
  		.acpi_match_table = ACPI_PTR(h5_acpi_match),
 +		.of_match_table = of_match_ptr(h5_of_match),
+ 		.pm = &h5_serdev_pm_ops,
  	},
  };
- 
--- 
-2.17.1
-

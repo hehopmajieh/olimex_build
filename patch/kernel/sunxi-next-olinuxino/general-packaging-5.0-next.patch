@@ -1,11 +1,24 @@
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index b025304bd..c1ad2f2ce 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -131,7 +131,7 @@ core-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
+ 
+ # Default target when executing plain make
+ boot		:= arch/arm64/boot
+-KBUILD_IMAGE	:= $(boot)/Image.gz
++KBUILD_IMAGE	:= $(boot)/Image
+ 
+ all:	Image.gz
+ 
 diff --git a/scripts/package/builddeb b/scripts/package/builddeb
-index 90c9a8a..3c79b90 100755
+index f43a274f4..5cc36e925 100755
 --- a/scripts/package/builddeb
 +++ b/scripts/package/builddeb
 @@ -29,6 +29,27 @@ create_package() {
  	# in case we are in a restrictive umask environment like 0077
  	chmod -R a+rX "$pdir"
-
+ 
 +	# Create preinstall and post install script to remove dtb
 +	if [[ "$1" == *dtb* ]]; then
 +		echo "if [ -d /boot/dtb-$version ]; then mv /boot/dtb-$version /boot/dtb-$version.old; fi" >> $pdir/DEBIAN/preinst
@@ -43,16 +56,15 @@ index 90c9a8a..3c79b90 100755
 +dtb_packagename=linux-dtb-next"$LOCALVERSION"
 +libc_headers_packagename=linux-libc-dev-next"$LOCALVERSION"
  dbg_packagename=$packagename-dbg
-
+ 
  if [ "$ARCH" = "um" ] ; then
-@@ -52,6 +75,15 @@ fi
+@@ -52,6 +75,14 @@ fi
  # XXX: have each arch Makefile export a variable of the canonical image install
  # path instead
  case $ARCH in
 +aarch64|arm64)
 +	image_name=Image
 +	installed_image_path="boot/vmlinuz-$version"
-+
 +	;;
 +arm*)
 +	image_name=zImage
@@ -61,9 +73,9 @@ index 90c9a8a..3c79b90 100755
  um)
  	installed_image_path="usr/bin/linux-$version"
  	;;
-@@ -65,7 +97,9 @@ esac
+@@ -65,7 +96,9 @@ esac
  BUILD_DEBUG="$(grep -s '^CONFIG_DEBUG_INFO=y' $KCONFIG_CONFIG || true)"
-
+ 
  # Setup the directory structure
 -rm -rf "$tmpdir" "$kernel_headers_dir" "$libc_headers_dir" "$dbg_dir" $objtree/debian/files
 +rm -rf "$tmpdir" "$kernel_headers_dir" "$libc_headers_dir" "$dbg_dir" "$dtb_dir" $objtree/debian/files
@@ -72,10 +84,10 @@ index 90c9a8a..3c79b90 100755
  mkdir -m 755 -p "$tmpdir/DEBIAN"
  mkdir -p "$tmpdir/lib" "$tmpdir/boot"
  mkdir -p "$kernel_headers_dir/lib/modules/$version/"
-@@ -118,6 +152,11 @@ if grep -q '^CONFIG_MODULES=y' $KCONFIG_CONFIG ; then
+@@ -118,6 +151,11 @@ if grep -q '^CONFIG_MODULES=y' $KCONFIG_CONFIG ; then
  	fi
  fi
-
+ 
 +if grep -q '^CONFIG_OF=y' $KCONFIG_CONFIG ; then
 +	#mkdir -p "$tmpdir/boot/dtb"
 +	INSTALL_DTBS_PATH="$dtb_dir/boot/dtb-$version" $MAKE KBUILD_SRC= dtbs_install
@@ -84,19 +96,10 @@ index 90c9a8a..3c79b90 100755
  if [ "$ARCH" != "um" ]; then
  	$MAKE headers_check KBUILD_SRC=
  	$MAKE headers_install KBUILD_SRC= INSTALL_HDR_PATH="$libc_headers_dir/usr"
-@@ -137,7 +176,7 @@ fi
- for script in postinst postrm preinst prerm ; do
- 	mkdir -p "$tmpdir$debhookdir/$script.d"
- 	cat <<EOF > "$tmpdir/DEBIAN/$script"
--#!/bin/sh
-+#!/bin/bash
-
- set -e
-
-@@ -153,9 +192,60 @@ EOF
+@@ -153,9 +191,60 @@ EOF
  	chmod 755 "$tmpdir/DEBIAN/$script"
  done
-
+ 
 +##
 +## Create sym link to kernel image
 +##
@@ -154,7 +157,7 @@ index 90c9a8a..3c79b90 100755
  (cd $srctree; find arch/$SRCARCH -name module.lds -o -name Kbuild.platforms -o -name Platform) >> "$objtree/debian/hdrsrcfiles"
  (cd $srctree; find $(find arch/$SRCARCH -name include -o -name scripts -type d) -type f) >> "$objtree/debian/hdrsrcfiles"
  if grep -q '^CONFIG_STACK_VALIDATION=y' $KCONFIG_CONFIG ; then
-@@ -167,15 +257,19 @@ if grep -q '^CONFIG_GCC_PLUGINS=y' $KCONFIG_CONFIG ; then
+@@ -167,15 +256,18 @@ if grep -q '^CONFIG_GCC_PLUGINS=y' $KCONFIG_CONFIG ; then
  fi
  destdir=$kernel_headers_dir/usr/src/linux-headers-$version
  mkdir -p "$destdir"
@@ -164,22 +167,21 @@ index 90c9a8a..3c79b90 100755
  (cd $objtree; cp $KCONFIG_CONFIG $destdir/.config) # copy .config manually to be where it's expected to be
  ln -sf "/usr/src/linux-headers-$version" "$kernel_headers_dir/lib/modules/$version/build"
  rm -f "$objtree/debian/hdrsrcfiles" "$objtree/debian/hdrobjfiles"
-
+ 
 +(cd $destdir; make M=scripts clean)
 +
  if [ "$ARCH" != "um" ]; then
  	create_package "$kernel_headers_packagename" "$kernel_headers_dir"
 -	create_package "$libc_headers_packagename" "$libc_headers_dir"
-+	# create_package "$libc_headers_packagename" "$libc_headers_dir"
 +	create_package "$dtb_packagename" "$dtb_dir"
  fi
-
+ 
  create_package "$packagename" "$tmpdir"
 diff --git a/scripts/package/mkdebian b/scripts/package/mkdebian
-index 6adb3a1..00e12eb 100755
+index edcad61fe..bc6942b92 100755
 --- a/scripts/package/mkdebian
 +++ b/scripts/package/mkdebian
-@@ -61,10 +61,12 @@ else
+@@ -94,10 +94,12 @@ else
  	packageversion=$version-$revision
  fi
  sourcename=$KDEB_SOURCENAME
@@ -192,9 +194,9 @@ index 6adb3a1..00e12eb 100755
  debarch=
 +image_name=
  set_debarch
-
+ 
  if [ "$ARCH" = "um" ] ; then
-@@ -168,6 +170,11 @@ Architecture: $debarch
+@@ -200,6 +202,11 @@ Architecture: $debarch
  Description: Linux kernel debugging symbols for $version
   This package will come in handy if you need to debug the kernel. It provides
   all the necessary debug symbols for the kernel and its modules.
@@ -204,18 +206,5 @@ index 6adb3a1..00e12eb 100755
 +Description: Linux DTB, version $version
 + This package contains device blobs from the Linux kernel, version $version
  EOF
-
+ 
  cat <<EOF > debian/rules
-diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
-index f839ecd9..cd276162 100644
---- a/arch/arm64/Makefile
-+++ b/arch/arm64/Makefile
-@@ -103,7 +103,7 @@ core-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
-
- # Default target when executing plain make
- boot		:= arch/arm64/boot
--KBUILD_IMAGE	:= $(boot)/Image.gz
-+KBUILD_IMAGE	:= $(boot)/Image
- KBUILD_DTBS	:= dtbs
-
- all:	Image.gz $(KBUILD_DTBS)
