@@ -1,0 +1,15 @@
+diff --git a/drivers/mmc/host/sunxi-mmc.c b/drivers/mmc/host/sunxi-mmc.c
+index 2901a5773d83..ce9815390b15 100644
+--- a/drivers/mmc/host/sunxi-mmc.c
++++ b/drivers/mmc/host/sunxi-mmc.c
+@@ -1406,7 +1406,9 @@ static int sunxi_mmc_probe(struct platform_device *pdev)
+ 	 */
+ 	if ((host->cfg->clk_delays || host->use_new_timings) &&
+ 	    !of_device_is_compatible(pdev->dev.of_node,
+-				     "allwinner,sun50i-h5-emmc"))
++				     "allwinner,sun50i-h5-emmc") &&
++	    !of_device_is_compatible(pdev->dev.of_node,
++				     "allwinner,sun50i-a64-emmc"))
+ 		mmc->caps      |= MMC_CAP_1_8V_DDR | MMC_CAP_3_3V_DDR;
+ 
+ 	ret = mmc_of_parse(mmc);
