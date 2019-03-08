@@ -2,13 +2,10 @@ diff --git a/plat/allwinner/sun50i_a64/sunxi_power.c b/plat/allwinner/sun50i_a64
 index b4d16a06..2316e75f 100644
 --- a/plat/allwinner/sun50i_a64/sunxi_power.c
 +++ b/plat/allwinner/sun50i_a64/sunxi_power.c
-@@ -240,6 +240,12 @@ static void setup_axp803_rails(const void *fdt)
+@@ -240,6 +240,9 @@ static void setup_axp803_rails(const void *fdt)
  		INFO("PMIC: AXP803: Enabling DRIVEVBUS\n");
  	}
  
-+	NOTICE("PMIC: AXP803: Setting ACIN current limit to 2.5A.\n");
-+	axp_clrsetbits(0x3a, 0x07, 0x02);
-+
 +	NOTICE("PMIC: AXP803: Setting charge current to 400mA.\n");
 +	axp_clrsetbits(0x33, 0x0f, 0x02);
 +

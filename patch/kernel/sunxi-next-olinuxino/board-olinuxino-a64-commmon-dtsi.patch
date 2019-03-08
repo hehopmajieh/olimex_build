@@ -370,10 +370,10 @@ index 000000000000..2849a00fe576
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
 new file mode 100644
-index 000000000000..4e9a2feca1ea
+index 000000000000..d9716e7e096a
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,96 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -448,7 +448,6 @@ index 000000000000..4e9a2feca1ea
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
-+	mmc-ddr-1_8v;
 +	status = "okay";
 +};
 +
@@ -473,7 +472,7 @@ index 000000000000..4e9a2feca1ea
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts
 new file mode 100644
-index 000000000000..bd1bfba3c8e5
+index 000000000000..2cb585a03c9c
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts
 @@ -0,0 +1,33 @@
@@ -506,16 +505,16 @@ index 000000000000..bd1bfba3c8e5
 +		#size-cells = <1>;
 +		compatible = "winbond,w25q128", "jedec,spi-nor", "spi-flash";
 +		reg = <0>;
-+		spi-max-frequency = <20000000>;
++		spi-max-frequency = <10000000>;
 +		status = "okay";
 +	};
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
 new file mode 100644
-index 000000000000..fb836266a5f4
+index 000000000000..86890d8818e4
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,24 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -528,7 +527,6 @@ index 000000000000..fb836266a5f4
 +
 +/ {
 +	model = "Olimex A64-Olinuxino-2Ge8G-IND";
-+	compatible = "olimex,a64-olinuxino", "allwinner,sun50i-a64";
 +};
 +
 +&mmc2 {
@@ -539,6 +537,5 @@ index 000000000000..fb836266a5f4
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
-+	mmc-ddr-1_8v;
 +	status = "okay";
 +};
