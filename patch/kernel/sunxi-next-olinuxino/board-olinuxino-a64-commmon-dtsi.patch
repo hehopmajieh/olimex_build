@@ -16,10 +16,10 @@ index 0b0917111099..4c00b4c20b17 100644
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-a64-pine64-plus.dtb sun50i-a64-pine64.dtb
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts
 new file mode 100644
-index 000000000000..bd8b534f3f37
+index 000000000000..ac5e6b854e4c
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts
-@@ -0,0 +1,329 @@
+@@ -0,0 +1,360 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -72,6 +72,15 @@ index 000000000000..bd8b534f3f37
 +		};
 +	};
 +
++	reg_vcc_sys: vcc-sys {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-sys";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++		status = "okay";
++	};
++
 +	reg_usb1_vbus: usb1-vbus {
 +		compatible = "regulator-fixed";
 +		regulator-name = "usb1-vbus";
@@ -120,7 +129,7 @@ index 000000000000..bd8b534f3f37
 +};
 +
 +&hdmi {
-+	hvcc-supply = <&reg_dldo1>;
++	hvcc-supply = <&reg_vcc_sys>;
 +	status = "okay";
 +};
 +
@@ -128,6 +137,15 @@ index 000000000000..bd8b534f3f37
 +	hdmi_out_con: endpoint {
 +		remote-endpoint = <&hdmi_con_in>;
 +	};
++};
++
++/* Exposed to UEXT connector */
++&i2c1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	status = "disabled";
 +};
 +
 +&i2s2 {
@@ -330,11 +348,24 @@ index 000000000000..bd8b534f3f37
 +	status = "disabled";
 +};
 +
++/* Exposed on UEXT */
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	status = "disabled";
++};
 +
 +&uart0 {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&uart0_pb_pins>;
 +	status = "okay";
++};
++
++/* Exposed on UEXT */
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart3_pins>;
++	status = "disabled";
 +};
 +
 +&usb_otg {
@@ -472,10 +503,10 @@ index 000000000000..d9716e7e096a
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts
 new file mode 100644
-index 000000000000..2cb585a03c9c
+index 000000000000..9c8633971fca
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,31 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -496,8 +527,6 @@ index 000000000000..2cb585a03c9c
 +};
 +
 +&spi0 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&spi0_pins>;
 +	status = "okay";
 +
 +	spi-nor@0 {
