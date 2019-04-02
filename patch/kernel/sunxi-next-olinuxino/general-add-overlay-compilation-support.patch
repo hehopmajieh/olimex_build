@@ -1,0 +1,98 @@
+From 4e3f3de06f4f88af1da23f050802202f105615fd Mon Sep 17 00:00:00 2001
+From: Dimitar Gamishev <gamishev@gmail.com>
+Date: Wed, 27 Mar 2019 11:46:47 +0200
+Subject: [PATCH] Fixes form dtb compilation
+
+---
+ arch/arm/boot/.gitignore |  2 ++
+ scripts/Makefile.dtbinst | 16 ++++++++++++++--
+ scripts/Makefile.lib     | 20 ++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/.gitignore b/arch/arm/boot/.gitignore
+index ce1c5ff746e7..4e5c1d59616f 100644
+--- a/arch/arm/boot/.gitignore
++++ b/arch/arm/boot/.gitignore
+@@ -3,3 +3,5 @@ zImage
+ xipImage
+ bootpImage
+ uImage
++*.dtb*
++*.scr
+diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
+index 7301ab5e2e06..a08f9bee3e55 100644
+--- a/scripts/Makefile.dtbinst
++++ b/scripts/Makefile.dtbinst
+@@ -20,6 +20,9 @@ include scripts/Kbuild.include
+ include $(src)/Makefile
+ 
+ dtbinst-files	:= $(sort $(dtb-y) $(if $(CONFIG_OF_ALL_DTBS), $(dtb-)))
++dtboinst-files	:= $(dtbo-y)
++script-files	:= $(scr-y)
++readme-files	:= $(dtbotxt-y)
+ dtbinst-dirs	:= $(subdir-y) $(subdir-m)
+ 
+ # Helper targets for Installing DTBs into the boot directory
+@@ -31,10 +34,19 @@ install-dir = $(patsubst $(dtbinst_root)%,$(INSTALL_DTBS_PATH)%,$(obj))
+ $(dtbinst-files): %.dtb: $(obj)/%.dtb
+ 	$(call cmd,dtb_install,$(install-dir))
+ 
++$(dtboinst-files): %.dtbo: $(obj)/%.dtbo
++	$(call cmd,dtb_install,$(install-dir))
++
++$(script-files): %.scr: $(obj)/%.scr
++	$(call cmd,dtb_install,$(install-dir))
++
++$(readme-files): %: $(src)/%
++	$(call cmd,dtb_install,$(install-dir))
++
+ $(dtbinst-dirs):
+ 	$(Q)$(MAKE) $(dtbinst)=$(obj)/$@
+ 
+-PHONY += $(dtbinst-files) $(dtbinst-dirs)
+-__dtbs_install: $(dtbinst-files) $(dtbinst-dirs)
++PHONY += $(dtbinst-files) $(dtboinst-files) $(script-files) $(readme-files) $(dtbinst-dirs)
++__dtbs_install: $(dtbinst-files) $(dtboinst-files) $(script-files) $(readme-files) $(dtbinst-dirs)
+ 
+ .PHONY: $(PHONY)
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index d41f37596276..041a7c56f5eb 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -250,6 +250,10 @@ quiet_cmd_gzip = GZIP    $@
+ # DTC
+ # ---------------------------------------------------------------------------
+ DTC ?= $(objtree)/scripts/dtc/dtc
++           
++# Overlay support
++DTC_FLAGS += -@ -Wno-unit_address_format -Wno-simple_bus_reg
++
+ 
+ # Disable noisy checks by default
+ ifeq ($(findstring 1,$(KBUILD_ENABLE_EXTRA_GCC_CHECKS)),)
+@@ -313,6 +317,22 @@ endef
+ 
+ $(obj)/%.dt.yaml: $(src)/%.dts $(DTC) $(DT_TMP_SCHEMA) FORCE
+ 	$(call if_changed_rule,dtc_dt_yaml)
++quiet_cmd_dtco = DTCO    $@
++cmd_dtco = mkdir -p $(dir ${dtc-tmp}) ; \
++	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
++	$(DTC) -O dtb -o $@ -b 0 \
++		-i $(dir $<) $(DTC_FLAGS) \
++		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
++	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
++
++$(obj)/%.dtbo: $(src)/%.dts FORCE
++	$(call if_changed_dep,dtco)
++
++quiet_cmd_scr = MKIMAGE $@
++cmd_scr = mkimage -C none -A $(ARCH) -T script -d $< $@
++
++$(obj)/%.scr: $(src)/%.scr-cmd FORCE
++	$(call if_changed,scr)
+ 
+ dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
+ 
+-- 
+2.20.1
+

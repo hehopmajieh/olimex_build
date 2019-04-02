@@ -1,0 +1,944 @@
+From 823f1610e11ee10fb76a179a0d58016cc7ab9052 Mon Sep 17 00:00:00 2001
+From: Dimitar Gamishev <gamishev@gmail.com>
+Date: Wed, 27 Mar 2019 10:55:03 +0200
+Subject: [PATCH 1/2] Overlays for a13
+
+---
+ arch/arm/boot/dts/Makefile                    |   2 +
+ arch/arm/boot/dts/overlay/Makefile            |  22 +++
+ .../dts/overlay/README.sun5i-a13-overlays     | 180 ++++++++++++++++++
+ .../dts/overlay/sun5i-a13-analog-codec.dts    |  13 ++
+ .../boot/dts/overlay/sun5i-a13-fixup.scr-cmd  |  48 +++++
+ arch/arm/boot/dts/overlay/sun5i-a13-i2c1.dts  |  22 +++
+ arch/arm/boot/dts/overlay/sun5i-a13-i2c2.dts  |  22 +++
+ arch/arm/boot/dts/overlay/sun5i-a13-nand.dts  |  60 ++++++
+ arch/arm/boot/dts/overlay/sun5i-a13-pwm.dts   |  15 ++
+ .../dts/overlay/sun5i-a13-spi-jedec-nor.dts   |  57 ++++++
+ .../boot/dts/overlay/sun5i-a13-spi-spidev.dts |  57 ++++++
+ arch/arm/boot/dts/overlay/sun5i-a13-spi0.dts  |  38 ++++
+ arch/arm/boot/dts/overlay/sun5i-a13-spi1.dts  |  39 ++++
+ arch/arm/boot/dts/overlay/sun5i-a13-spi2.dts  |  22 +++
+ arch/arm/boot/dts/overlay/sun5i-a13-uart0.dts |  32 ++++
+ arch/arm/boot/dts/overlay/sun5i-a13-uart1.dts |  22 +++
+ arch/arm/boot/dts/overlay/sun5i-a13-uart2.dts |  22 +++
+ arch/arm/boot/dts/overlay/sun5i-a13-uart3.dts |  22 +++
+ scripts/Makefile.lib                          |   3 +
+ 19 files changed, 698 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlay/Makefile
+ create mode 100644 arch/arm/boot/dts/overlay/README.sun5i-a13-overlays
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-analog-codec.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-fixup.scr-cmd
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-i2c1.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-i2c2.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-nand.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-pwm.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-spi-jedec-nor.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-spi-spidev.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-spi0.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-spi1.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-spi2.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-uart0.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-uart1.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-uart2.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-uart3.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index bd40148a15b2..79184a9eb7c1 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -1248,3 +1248,5 @@ dtb-$(CONFIG_ARCH_ASPEED) += \
+ 	aspeed-bmc-opp-zaius.dtb \
+ 	aspeed-bmc-portwell-neptune.dtb \
+ 	aspeed-bmc-quanta-q71l.dtb
++
++subdir-y       := overlay
+diff --git a/arch/arm/boot/dts/overlay/Makefile b/arch/arm/boot/dts/overlay/Makefile
+new file mode 100644
+index 000000000000..454b6b4492b5
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/Makefile
+@@ -0,0 +1,22 @@
++dtbo-$(CONFIG_MACH_SUN5I) += \
++       sun5i-a13-analog-codec.dtbo \
++       sun5i-a13-i2c1.dtbo \
++       sun5i-a13-i2c2.dtbo \
++       sun5i-a13-nand.dtbo \
++       sun5i-a13-pwm.dtbo \
++       sun5i-a13-spi0.dtbo \
++       sun5i-a13-spi1.dtbo \
++       sun5i-a13-spi2.dtbo \
++       sun5i-a13-spi-jedec-nor.dtbo \
++       sun5i-a13-spi-spidev.dtbo \
++       sun5i-a13-uart0.dtbo \
++       sun5i-a13-uart1.dtbo \
++       sun5i-a13-uart2.dtbo \
++       sun5i-a13-uart3.dtbo \
++       sun5i-a13-olimex-lcd-4.3.dtbo \
++       sun5i-a13-olimex-lcd-7.dtbo \
++       sun5i-a13-olimex-lcd-10.dtbo
++
++scr-$(CONFIG_MACH_SUN5I) += sun5i-a13-fixup.scr
++
++dtbotxt-$(CONFIG_MACH_SUN5I) += README.sun5i-a13-overlays
+diff --git a/arch/arm/boot/dts/overlay/README.sun5i-a13-overlays b/arch/arm/boot/dts/overlay/README.sun5i-a13-overlays
+new file mode 100644
+index 000000000000..c71fa1ae5c9b
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/README.sun5i-a13-overlays
+@@ -0,0 +1,180 @@
++This document describes overlays provided in the kernel packages
++For generic Armbian overlays documentation please see
++https://docs.armbian.com/User-Guide_Allwinner_overlays/
++
++### Platform:
++
++sun5i-a13 (Allwinner A13)
++
++### Platform details:
++
++I2C bus 0 is used for the AXP209 PMIC
++
++### Provided overlays:
++
++- analog-codec
++- i2c1
++- i2c2
++- nand
++- pwm
++- spi0
++- spi1
++- spi2
++- spi-jedec-nor
++- spi-spidev
++- uart0
++- uart1
++- uart2
++- uart3
++
++### Overlay details:
++
++### analog-codec
++
++Activates SoC analog codec driver that provides HP Out and Mic In
++functionality
++
++### i2c1
++
++Activates TWI/I2C bus 1
++
++I2C1 pins (SCL, SDA): PB15, PB16
++
++### i2c2
++
++Activates TWI/I2C bus 2
++
++I2C2 pins (SCL, SDA): PB17, PB18
++
++### nand
++
++Activates NAND controller
++
++This overlay should not be used until mainline MLC NAND support
++allows using NAND storage reliably
++
++### pwm
++
++Activates hardware PWM controller
++
++PWM pins (PWM0): PB2
++
++### spi0
++
++Activates SPI controller 0 to use it with other overlays and sets up the pin multiplexing for it
++
++SPI 0 pins (MOSI, MISO, SCK, CS0): PC0, PC1, PC2, PC3
++
++### spi1
++
++Activates SPI controller 1 to use it with other overlays and sets up the pin multiplexing for it
++
++SPI 1 pins (MOSI, MISO, SCK, CS0): PG11, PG12, PG10, PG9
++
++### spi2
++
++Activates SPI controller 2 to use it with other overlays and sets up the pin multiplexing for it
++
++SPI 2 pins (MOSI, MISO, SCK, CS0): PE2, PE3, PE1, PE0
++
++### spi-jedec-nor
++
++Activates MTD support for JEDEC compatible SPI NOR flash chips on SPI bus
++supported by the kernel SPI NOR driver
++
++SPI 0 pins (MOSI, MISO, SCK, CS0): PC0, PC1, PC2, PC3
++SPI 1 pins (MOSI, MISO, SCK, CS0): PG11, PG12, PG10, PG9
++SPI 2 pins (MOSI, MISO, SCK, CS0): PE2, PE3, PE1, PE0
++
++Parameters:
++
++param_spinor_spi_bus (int)
++	SPI bus to activate SPI NOR flash support on
++	Required
++	Supported values: 0, 1, 2
++
++param_spinor_max_freq (int)
++	Maximum SPI frequency
++	Optional
++	Default: 1000000
++	Range: 3000 - 100000000
++
++### spi-spidev
++
++Activates SPIdev device node (/dev/spidevX.Y) for userspace SPI access,
++where X is the bus number and Y is the CS number
++
++SPI 0 pins (MOSI, MISO, SCK, CS0): PC0, PC1, PC2, PC3
++SPI 1 pins (MOSI, MISO, SCK, CS0): PG11, PG12, PG10, PG9
++SPI 2 pins (MOSI, MISO, SCK, CS0): PE2, PE3, PE1, PE0
++
++Parameters:
++
++param_spidev_spi_bus (int)
++	SPI bus to activate mcp2515 support on
++	Required
++	Supported values: 0, 1, 2
++
++param_spidev_max_freq (int)
++	Maximum SPIdev frequency
++	Optional
++	Default: 1000000
++	Range: 3000 - 100000000
++
++### uart 0
++
++Activates serial port 0 (/dev/ttyS0)
++
++UART 0 pins (TX, RX): PF2, PF4
++
++### uart 1
++
++Activates serial port 1 (/dev/ttyS1)
++
++UART 1 pins a (TX, RX): PE10, PE11
++UART 1 pins b (TX, RX): PG3, PG4
++
++Parameters:
++
++param_uart1_pins (char)
++	UART 1 pinmux variant
++	Optional
++	Default: a
++	Supported values: a, b
++	Determines what pins UART 1 is exposed on if UART 1 is used
++
++### uart2
++
++Activates serial port 2 (/dev/ttyS2)
++
++UART 2 pins (TX, RX, RTS, CTS): PD2, PD3, PD4, PD5
++
++Parameters:
++
++param_uart2_rtscts (bool)
++	Enable RTS and CTS pins
++	Optional
++	Default: 0
++	Set to 1 to enable CTS and RTS pins
++
++### uart3
++
++Activates serial port 3 (/dev/ttyS3)
++
++UART 3 pins (TX, RX, RTS, CTS): PG9, PG10, PG12, PG11
++
++Parameters:
++
++param_uart3_rtscts (bool)
++	Enable RTS and CTS pins
++	Optional
++	Default: 0
++	Set to 1 to enable CTS and RTS pins
++
++### Olimex LCD Panels
++
++Activates Olimex LCD panels
++
++-4.3 inch
++-7 inch
++-10 inch
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-analog-codec.dts b/arch/arm/boot/dts/overlay/sun5i-a13-analog-codec.dts
+new file mode 100644
+index 000000000000..60e2717fc582
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-analog-codec.dts
+@@ -0,0 +1,13 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun4i-a13";
++
++	fragment@0 {
++		target = <&codec>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-fixup.scr-cmd b/arch/arm/boot/dts/overlay/sun5i-a13-fixup.scr-cmd
+new file mode 100644
+index 000000000000..9589767ac56e
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-fixup.scr-cmd
+@@ -0,0 +1,48 @@
++# overlays fixup script
++# implements (or rather substitutes) overlay arguments functionality
++# using u-boot scripting, environment variables and "fdt" command
++
++if test -n "${param_spinor_spi_bus}"; then
++	test "${param_spinor_spi_bus}" = "0" && setenv tmp_spi_path "spi@1c05000"
++	test "${param_spinor_spi_bus}" = "1" && setenv tmp_spi_path "spi@1c06000"
++	test "${param_spinor_spi_bus}" = "2" && setenv tmp_spi_path "spi@1c17000"
++	fdt set /soc@1c00000/${tmp_spi_path} status "okay"
++	fdt set /soc@1c00000/${tmp_spi_path}/spiflash status "okay"
++	if test -n "${param_spinor_max_freq}"; then
++		fdt set /soc@1c00000/${tmp_spi_path}/spiflash spi-max-frequency "<${param_spinor_max_freq}>"
++	fi
++	env delete tmp_spi_path
++fi
++
++if test -n "${param_spidev_spi_bus}"; then
++	test "${param_spidev_spi_bus}" = "0" && setenv tmp_spi_path "spi@1c05000"
++	test "${param_spidev_spi_bus}" = "1" && setenv tmp_spi_path "spi@1c06000"
++	test "${param_spidev_spi_bus}" = "2" && setenv tmp_spi_path "spi@1c17000"
++	fdt set /soc@1c00000/${tmp_spi_path} status "okay"
++	fdt set /soc@1c00000/${tmp_spi_path}/spidev status "okay"
++	if test -n "${param_spidev_max_freq}"; then
++		fdt set /soc@1c00000/${tmp_spi_path}/spidev spi-max-frequency "<${param_spidev_max_freq}>"
++	fi
++	env delete tmp_spi_path
++fi
++
++if test "${param_uart1_pins}" = "b"; then
++	fdt get value tmp_phandle /soc@1c00000/pinctrl@1c28400/uart1@1 phandle
++	fdt set /soc@1c00000/serial@1c28400 pinctrl-0 "<${tmp_phandle}>"
++	env delete tmp_phandle
++fi
++
++if test "${param_uart2_rtscts}" = "1"; then
++	fdt get value tmp_phandle1 /soc@1c00000/pinctrl@1c20800/uart2@0 phandle
++	fdt get value tmp_phandle2 /soc@1c00000/pinctrl@1c20800/uart2-cts-rts@0 phandle
++	fdt set /soc@1c00000/serial@1c28800 pinctrl-0 "<${tmp_phandle1}>, <${tmp_phandle2}>"
++	env delete tmp_phandle1 tmp_phandle2
++fi
++
++if test "${param_uart3_rtscts}" = "1"; then
++	fdt get value tmp_phandle1 /soc@1c00000/pinctrl@1c20800/uart3@0 phandle
++	fdt get value tmp_phandle2 /soc@1c00000/pinctrl@1c20800/uart3-cts-rts@0 phandle
++	fdt set /soc@1c00000/serial@1c28c00 pinctrl-names "default" "default"
++	fdt set /soc@1c00000/serial@1c28c00 pinctrl-0 "<${tmp_phandle1}>, <${tmp_phandle2}>"
++	env delete tmp_phandle1 tmp_phandle2
++fi
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-i2c1.dts b/arch/arm/boot/dts/overlay/sun5i-a13-i2c1.dts
+new file mode 100644
+index 000000000000..e6749629c49b
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-i2c1.dts
+@@ -0,0 +1,22 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			i2c1 = "/soc@1c00000/i2c@1c2b000";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c1>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c1_pins_a>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-i2c2.dts b/arch/arm/boot/dts/overlay/sun5i-a13-i2c2.dts
+new file mode 100644
+index 000000000000..497f618d7aaa
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-i2c2.dts
+@@ -0,0 +1,22 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			i2c2 = "/soc@1c00000/i2c@1c2b400";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c2>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c2_pins_a>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-nand.dts b/arch/arm/boot/dts/overlay/sun5i-a13-nand.dts
+new file mode 100644
+index 000000000000..669527af20b7
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-nand.dts
+@@ -0,0 +1,60 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target = <&nfc>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&nand_pins_a>, <&nand_cs0_pins_a>, <&nand_rb0_pins_a>;
++			status = "okay";
++
++			nand@0 {
++				reg = <0>;
++				allwinner,rb = <0>;
++				nand-ecc-mode = "hw";
++				nand-on-flash-bbt;
++
++				partitions {
++					compatible = "fixed-partitions";
++					#address-cells = <2>;
++					#size-cells = <2>;
++
++					partition@0 {
++						label = "SPL";
++						reg = <0x0 0x0 0x0 0x400000>;
++					};
++
++					partition@400000 {
++						label = "SPL.backup";
++						reg = <0x0 0x400000 0x0 0x400000>;
++					};
++
++					partition@800000 {
++						label = "U-Boot";
++						reg = <0x0 0x800000 0x0 0x400000>;
++					};
++
++					partition@c00000 {
++						label = "U-Boot.backup";
++						reg = <0x0 0xc00000 0x0 0x400000>;
++					};
++
++					partition@1000000 {
++						label = "env";
++						reg = <0x0 0x1000000 0x0 0x400000>;
++					};
++
++					partition@1400000 {
++						label = "rootfs";
++						reg = <0x0 0xa00000 0x01 0xff000000>;
++					};
++				};
++			};
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-pwm.dts b/arch/arm/boot/dts/overlay/sun5i-a13-pwm.dts
+new file mode 100644
+index 000000000000..711ff9c3a82c
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-pwm.dts
+@@ -0,0 +1,15 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target = <&pwm>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm0_pins>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-spi-jedec-nor.dts b/arch/arm/boot/dts/overlay/sun5i-a13-spi-jedec-nor.dts
+new file mode 100644
+index 000000000000..cece79612c85
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-spi-jedec-nor.dts
+@@ -0,0 +1,57 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			spi0 = "/soc/spi@1c05000";
++			spi1 = "/soc/spi@1c06000";
++			spi2 = "/soc/spi@1c17000";
++		};
++	};
++
++	fragment@1 {
++		target = <&spi0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			spiflash {
++				compatible = "jedec,spi-nor";
++				status = "disabled";
++				reg = <0>;
++				spi-max-frequency = <1000000>;
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			spiflash {
++				compatible = "jedec,spi-nor";
++				status = "disabled";
++				reg = <0>;
++				spi-max-frequency = <1000000>;
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&spi2>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			spiflash {
++				compatible = "jedec,spi-nor";
++				status = "disabled";
++				reg = <0>;
++				spi-max-frequency = <1000000>;
++			};
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-spi-spidev.dts b/arch/arm/boot/dts/overlay/sun5i-a13-spi-spidev.dts
+new file mode 100644
+index 000000000000..6294ee3bcfe6
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-spi-spidev.dts
+@@ -0,0 +1,57 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a10";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			spi0 = "/soc/spi@1c05000";
++			spi1 = "/soc/spi@1c06000";
++			spi2 = "/soc/spi@1c17000";
++		};
++	};
++
++	fragment@1 {
++		target = <&spi0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			spidev {
++				compatible = "spidev";
++				status = "disabled";
++				reg = <0>;
++				spi-max-frequency = <1000000>;
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			spidev {
++				compatible = "spidev";
++				status = "disabled";
++				reg = <0>;
++				spi-max-frequency = <1000000>;
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&spi2>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			spidev {
++				compatible = "spidev";
++				status = "disabled";
++				reg = <0>;
++				spi-max-frequency = <1000000>;
++			};
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-spi0.dts b/arch/arm/boot/dts/overlay/sun5i-a13-spi0.dts
+new file mode 100644
+index 000000000000..b23a754c0006
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-spi0.dts
+@@ -0,0 +1,38 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			spi0 = "/soc/spi@1c05000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pio>;
++		__overlay__ {
++			spi0_pins_a: spi0@0 {
++				pins = "PC0", "PC1", "PC2";
++				function = "spi0";
++			};
++
++			spi0_cs0_pins_a: spi0-cs0@0 {
++				pins = "PC3";
++				function = "spi0";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++				status = "okay";
++				pinctrl-names = "default", "default";
++				pinctrl-0 = <&spi0_pins_a>;
++				pinctrl-1 = <&spi0_cs0_pins_a>;
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-spi1.dts b/arch/arm/boot/dts/overlay/sun5i-a13-spi1.dts
+new file mode 100644
+index 000000000000..cc0af5db3fd0
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-spi1.dts
+@@ -0,0 +1,39 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			spi1 = "/soc/spi@1c06000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pio>;
++		__overlay__ {
++			spi1_pins_a: spi1@0 {
++				pins = "PG10", "PG11", "PG12";
++				function = "spi1";
++			};
++
++			spi1_cs0_pins_a: spi1-cs0@0 {
++				pins = "PG9";
++				function = "spi1";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi1>;
++		__overlay__ {
++			status = "okay";
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi1_pins_a>, <&spi1_cs0_pins_a>;
++		};
++	};
++
++
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-spi2.dts b/arch/arm/boot/dts/overlay/sun5i-a13-spi2.dts
+new file mode 100644
+index 000000000000..e8535bedca65
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-spi2.dts
+@@ -0,0 +1,22 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			spi2 = "/soc/spi@1c17000";
++		};
++	};
++
++	fragment@1 {
++		target = <&spi2>;
++		__overlay__ {
++			status = "okay";
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi2_pins_a>, <&spi2_cs0_pins_a>;
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-uart0.dts b/arch/arm/boot/dts/overlay/sun5i-a13-uart0.dts
+new file mode 100644
+index 000000000000..b1ce13d838ef
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-uart0.dts
+@@ -0,0 +1,32 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			uart0 = "/soc@1c00000/serial@1c28000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pio>;
++		__overlay__ {
++			uart0_pins_a: uart0@0 {
++				pins = "PF2", "PF4";
++				function = "uart0";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&uart0>;
++		 __overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart0_pins_a>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-uart1.dts b/arch/arm/boot/dts/overlay/sun5i-a13-uart1.dts
+new file mode 100644
+index 000000000000..b165d5e4c03d
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-uart1.dts
+@@ -0,0 +1,22 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			uart1 = "/soc@1c00000/serial@1c28400";
++		};
++	};
++
++	fragment@1 {
++		target = <&uart1>;
++		 __overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart1_pins_a>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-uart2.dts b/arch/arm/boot/dts/overlay/sun5i-a13-uart2.dts
+new file mode 100644
+index 000000000000..fa2d0f1c3c2a
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-uart2.dts
+@@ -0,0 +1,22 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			uart2 = "/soc@1c00000/serial@1c28800";
++		};
++	};
++
++	fragment@1 {
++		target = <&uart2>;
++		 __overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart2_pins_a>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-uart3.dts b/arch/arm/boot/dts/overlay/sun5i-a13-uart3.dts
+new file mode 100644
+index 000000000000..d474544dc468
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-uart3.dts
+@@ -0,0 +1,22 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun5i-a13";
++
++	fragment@0 {
++		target-path = "/aliases";
++		__overlay__ {
++			uart3 = "/soc@1c00000/serial@1c28c00";
++		};
++	};
++
++	fragment@1 {
++		target = <&uart3>;
++		 __overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart3_pins_a>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index 12b88d09c3a4..d41f37596276 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -60,6 +60,9 @@ real-obj-m := $(foreach m, $(obj-m), $(if $(strip $($(m:.o=-objs)) $($(m:.o=-y))
+ # If CONFIG_OF_ALL_DTBS is enabled, all DT blobs are built
+ extra-y				+= $(dtb-y)
+ extra-$(CONFIG_OF_ALL_DTBS)	+= $(dtb-)
++# Overlay targets
++extra-y                                += $(dtbo-y) $(scr-y) $(dtbotxt-y)
++
+ 
+ ifneq ($(CHECK_DTBS),)
+ extra-y += $(patsubst %.dtb,%.dt.yaml, $(dtb-y))
+-- 
+2.20.1
+
+
+From 9b787fa25be1d60c21642394df65b03c86662f70 Mon Sep 17 00:00:00 2001
+From: Dimitar Gamishev <gamishev@gmail.com>
+Date: Wed, 27 Mar 2019 10:59:23 +0200
+Subject: [PATCH 2/2] Overlays for Olimex LCD Panels
+
+---
+ .../boot/dts/overlay/sun5i-a13-olimex-lcd-10.dts   | 14 ++++++++++++++
+ .../boot/dts/overlay/sun5i-a13-olimex-lcd-4.3.dts  | 14 ++++++++++++++
+ .../boot/dts/overlay/sun5i-a13-olimex-lcd-7.dts    | 14 ++++++++++++++
+ 3 files changed, 42 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-10.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-4.3.dts
+ create mode 100644 arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-7.dts
+
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-10.dts b/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-10.dts
+new file mode 100644
+index 000000000000..c50149a019ac
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-10.dts
+@@ -0,0 +1,14 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++compatible = "allwinner,sun5i-a13";
++fragment@0 {
++ target-path = "/panel"; /* or target-path */
++	 __overlay__ {
++		compatible = "olimex,lcd-olinuxino-10";
++	};
++ }; 
++
++};
++
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-4.3.dts b/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-4.3.dts
+new file mode 100644
+index 000000000000..5addda3a48cf
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-4.3.dts
+@@ -0,0 +1,14 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++compatible = "allwinner,sun5i-a13";
++fragment@0 {
++ target-path = "/panel"; /* or target-path */
++	 __overlay__ {
++		compatible = "olimex,lcd-olinuxino-4.3";
++	};
++ }; 
++
++};
++
+diff --git a/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-7.dts b/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-7.dts
+new file mode 100644
+index 000000000000..f0b8a63144b5
+--- /dev/null
++++ b/arch/arm/boot/dts/overlay/sun5i-a13-olimex-lcd-7.dts
+@@ -0,0 +1,14 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++compatible = "allwinner,sun5i-a13";
++fragment@0 {
++ target-path = "/panel"; /* or target-path */
++	 __overlay__ {
++		compatible = "olimex,lcd-olinuxino-7";
++	};
++ }; 
++
++};
++
+-- 
+2.20.1
+

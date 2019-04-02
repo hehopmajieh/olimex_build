@@ -1,0 +1,21 @@
+commit 352a5f617f4f9f3253c2abf03a711cff0b8b9adf
+Author: Dimitar Gamishev <gamishev@gmail.com>
+Date:   Thu Mar 28 09:06:55 2019 +0200
+
+    Fix touchscreen inverted axis
+
+diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
+index 68b9c34861cd..cfb96a9b9d83 100644
+--- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
++++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
+@@ -265,9 +265,6 @@
+ 
+ &rtp {
+ 	allwinner,ts-attached;
+-	#thermal-sensor-cells = <0>;
+-	/* sensitive/noisy touch panel */
+-	allwinner,tp-sensitive-adjust = <0>;
+-	allwinner,filter-type = <3>;
++	touchscreen-inverted-x;
+ };
+ 
