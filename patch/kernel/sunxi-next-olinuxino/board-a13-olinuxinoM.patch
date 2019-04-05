@@ -79,3 +79,16 @@ index 943868e495bc..99a1e363b619 100644
 +        status = "okay";
 +};
 +
+ &uart1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart1_pg_pins>;
+@@ -153,3 +205,9 @@
+ 	usb1_vbus-supply = <&reg_usb1_vbus>;
+ 	status = "okay";
+ };
++
++&rtp {
++	allwinner,ts-attached;
++	touchscreen-inverted-x;
++};
++
