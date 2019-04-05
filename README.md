@@ -1,4 +1,4 @@
-# Armbian for OLIMEX A20 boards #
+# Armbian for OLIMEX A20 & A13 boards #
 
 **This info had been modified for the Olimex branch of the build**
 
